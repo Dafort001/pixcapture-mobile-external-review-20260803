@@ -23,7 +23,7 @@ The external reviewer should focus on `ios/PIXCAPTURE`, the Xcode project, iOS t
 
 `candidate/ios-3.9-upload-orientation-safety` is a deliberately small diff from
 the released snapshot. Its source provenance is local mobile commit
-`6d650b2ab227a593452e05ce59510d2bccd2357f`, based on the released source above.
+`3e56988ad081ab006d25edf88e560c49193c6237`, based on the released source above.
 It contains only:
 
 - cancellation-safe WebRTC timeout/failure propagation and connection cleanup;
@@ -42,6 +42,7 @@ It contains only:
 - the ignore rule for the separately archived inactive OpenCV artifact.
 
 This candidate has passed the simulator and signed real-device builds, 66
-unit/integration tests, and the targeted fresh-install offline-entry UI test.
+unit/integration tests, and the targeted fresh-install offline-entry UI test,
+including explicit scrolling to the final action and a bottom-safe-area check.
 It has not yet passed the required real-iPhone camera/orientation and network
 E2E matrix and is not an App Store release.

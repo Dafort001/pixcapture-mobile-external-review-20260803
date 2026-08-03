@@ -62,6 +62,27 @@ final class PIXCAPTUREUITests: XCTestCase {
             "Camera permission must not be requested before the user chooses a capture feature."
         )
 
+        let loginButton = app.buttons["BEREITS FREIGESCHALTET? ANMELDEN"]
+        var remainingScrollAttempts = 8
+        while !loginButton.isHittable && remainingScrollAttempts > 0 {
+            app.swipeUp()
+            remainingScrollAttempts -= 1
+        }
+
+        XCTAssertTrue(
+            loginButton.isHittable,
+            "The onboarding page could not be scrolled to its final action."
+        )
+        XCTAssertLessThanOrEqual(
+            loginButton.frame.maxY,
+            app.frame.maxY - 20,
+            "The final onboarding action overlaps the bottom safe area."
+        )
+        XCTAssertTrue(
+            offlineButton.isHittable,
+            "The primary offline action is not reachable after scrolling to the bottom."
+        )
+
         offlineButton.tap()
 
         XCTAssertTrue(

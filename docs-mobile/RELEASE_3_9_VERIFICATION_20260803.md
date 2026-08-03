@@ -18,8 +18,9 @@ Build ersetzt keinen realen Geräte- oder Übertragungstest.
   Level-/Querformat-Regressionstests, vorhandener Galerie-Orientierungstests
   sowie Kontrast- und SMS-Aktivierungstests in Deutsch und Englisch.
 - [x] Gezielter Erststart-UI-Test erfolgreich: Ohne Anmeldung bis zum lokalen
-  Startbildschirm; keine Kamera-Berechtigungsabfrage, bevor der Nutzer die
-  Kamera bewusst auswählt.
+  Startbildschirm; keine Kamera-Berechtigungsabfrage vor der bewussten
+  Kamerawahl; vollständiger Textbereich bis zur letzten Aktion scrollbar und
+  untere Aktion oberhalb der Safe Area erreichbar.
 - [x] Erststart im Simulator visuell geprüft: Offline-Fotografie steht an
   erster Stelle, beide SMS-Stufen sind erklärt, und Fließtext auf Schwarz nutzt
   kontrastreiches warmes Greige statt Orange.
