@@ -27,6 +27,8 @@ Noch offen sind die dokumentierten realen iPhone-Tests für beide
 Querformatrichtungen sowie vollständige WebRTC-/Cloud-End-to-End-Läufe unter
 unterschiedlichen Netzbedingungen. Der genaue Prüfstand steht in
 [`docs-mobile/RELEASE_3_9_VERIFICATION_20260803.md`](docs-mobile/RELEASE_3_9_VERIFICATION_20260803.md).
+Der dazugehörige eigenständige Produkt- und Sicherheitsvertrag steht in
+[`docs-mobile/EXTERNAL_REVIEW_CONTRACT.md`](docs-mobile/EXTERNAL_REVIEW_CONTRACT.md).
 
 ## Prüfbereich
 

@@ -1,19 +1,19 @@
-# PixCapture Mobile Agent Rule
+# PIXCAPTURE iOS External Review Rules
 
-Before changing this project, read:
+This repository is a self-contained public review snapshot. Do not expect or
+follow files outside this repository.
 
-1. `../../00_READ_FIRST_EVERY_SESSION.md`
-2. `../../docs/START.md`
-3. `../../docs/HANDOVERS/README.md`
-4. `../../docs/HANDOVERS/PIXCAPTURE_CURRENT_CONTRACT.md`
+Before reviewing code, read only:
 
-This is the Swift App branch: native PixCapture iOS capture, login,
-QR/Web-Connect, upload queue, local recovery, TestFlight and Apple compliance.
+1. `README.md`
+2. `EXTERNAL_REVIEW_SCOPE.md`
+3. `docs-mobile/EXTERNAL_REVIEW_CONTRACT.md`
+4. `docs-mobile/RELEASE_3_9_VERIFICATION_20260803.md`
 
-Do not treat this as PixImmo browser intake. QR-Connect, phone upload and
-Capture-V2 belong to PixCapture unless a bridge is explicitly requested.
+Review the implementation under `ios/`, especially camera orientation and
+level mapping, local-data safety, authentication boundaries, WebRTC failure
+handling, upload retry semantics, and the automated tests.
 
-`docs-mobile/` contains useful historical and topic-specific notes, but it is
-not the current source of truth. Open files there only when the current
-contract or the task explicitly points to them. Older Mobile handovers must not
-override `PIXCAPTURE_CURRENT_CONTRACT.md`.
+The repository is an isolated copy. Findings should be reported to the owner;
+do not assume that changing this snapshot changes the private production
+repository.
