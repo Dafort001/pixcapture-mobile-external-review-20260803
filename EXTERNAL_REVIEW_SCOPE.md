@@ -42,3 +42,21 @@ produktive Zugangsdaten/QR erwartungsgemäß übersprungen. Reale Kamera-
 /Nivellierungstests, produktives TURN sowie die vollständige Netzwerk-/Cloud-
 E2E-Matrix sind weiterhin offen. Sechs Strict-Concurrency-Warnungen im
 `CameraManager` sind dokumentierte, nicht kaschierte Restarbeit.
+
+## Bewusst nicht als erledigt behauptet
+
+- Der v1-Paketvertrag verwendet weiterhin eine zusammenhängende AES-GCM-
+  Envelope. Pro Datei wurden speicherschonendes Mapping und ein
+  `autoreleasepool` ergänzt; ein echtes Streaming-/Chunk-Protokoll wäre eine
+  inkompatible Protokollmigration und ist nicht Teil dieses Commits.
+- Die releasekritischen Kamera-, Upload-, Auth- und Berechtigungspfade wurden
+  lokalisiert. Die gesamte historisch gewachsene App ist damit noch nicht von
+  jedem hart codierten sichtbaren Text bereinigt.
+- Die sehr großen SwiftUI-Views und der `CameraManager` wurden nicht allein zur
+  Verkürzung in viele Dateien zerlegt. Diese strukturelle Arbeit soll getrennt
+  und mit echten Kamera-/Upload-Regressionstests erfolgen.
+- Das Browser-Gegenstück gehört zum getrennten Web-Repository und ist deshalb
+  nicht Bestandteil dieses ausdrücklich auf die Swift-App begrenzten
+  Prüfrepositories. Der Swift-Vertrag darf trotzdem nur ein exakt passendes
+  Receipt akzeptieren; ein Browser ohne diesen Vertrag muss sichtbar
+  fehlschlagen und darf keinen lokalen Erfolgsstatus erzeugen.
