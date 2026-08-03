@@ -28,16 +28,22 @@ Sicherheitsvertrag. Externe Dateien sind dafür nicht erforderlich.
   ein dauerhafter Zustand „Upload läuft / 0 KB“ ist unzulässig.
 - Normale Wege sind Browser-Companion im lokalen Netz und Direkt-in-die-Cloud.
   Kabel ist nur ein nachrangiger Notfallweg.
-- Der Browser-Companion verwendet derzeit STUN ohne produktiv nachgewiesenen
-  TURN-Relay-Fallback. Ein sauber gemeldeter Fehler ist implementiert; eine
-  netzunabhängige Erfolgsgarantie besteht deshalb ausdrücklich nicht.
+- Swift und Browser können eine gemeinsame ICE-Konfiguration mit STUN und
+  optionalen kurzlebigen coturn-REST-Zugangsdaten beziehen. Ein produktiver
+  TURN-Dienst ist noch nicht provisioniert und in getrennten Netzen
+  nachgewiesen; eine netzunabhängige Erfolgsgarantie besteht deshalb nicht.
+- Browser-Companion und lokaler Receiver dürfen Erfolg nur mit exakt passender
+  Paket-ID, Bytezahl und SHA-256 bestätigen. Warnungen oder unvollständige
+  Receipts sind Fehler und dürfen lokale Records nicht auf `uploaded` setzen.
 
 ## Kamera und Orientierung
 
 - iPhone unterstützt Portrait, Landscape Left und Landscape Right.
 - Kamera-Vorschau, Nivellierung, Keystone-Korrektur, Aufnahme und gespeicherte
-  Pixel-/EXIF-Orientierung müssen dieselbe aktive Viewport-Orientierung
-  verwenden.
+  Pixel-/EXIF-Orientierung müssen denselben Resolver verwenden. Die physische
+  Geräteorientierung hat Vorrang, weil eine noch portrait gemeldete Scene beim
+  Drehen des Telefons nicht erneut den beobachteten 90-Grad-Fehler erzeugen
+  darf.
 - Bereits viewportbezogene Roll-/Pitch-Werte dürfen im Single-Shot-Pfad nicht
   ein zweites Mal um die Landschaftsachse gedreht werden.
 - Der reproduzierte Fehler war: gleiche physische Lage, Portrait `R 0,0° / P
@@ -46,8 +52,8 @@ Sicherheitsvertrag. Externe Dateien sind dafür nicht erforderlich.
 ## Bedienbarkeit und Barrierearmut
 
 - Fließ- und Eingabetext auf schwarzem Hintergrund verwendet kontrastreiches
-  warmes Greige. Orange bleibt Akzent und darf Information nicht allein
-  tragen.
+  warmes Greige. Numerische Levelwerte sind hellblau; Rot/Grün darf Information
+  nicht allein tragen. Orange bleibt Akzent.
 - Der lange Erststart muss vollständig scrollbar sein. Die letzte Aktion muss
   oberhalb der unteren Safe Area erreichbar bleiben.
 - Die Kamera-Berechtigung darf nicht vor der bewussten Auswahl einer

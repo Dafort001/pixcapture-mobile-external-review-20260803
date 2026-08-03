@@ -11,21 +11,31 @@ verbunden.
 - lokales Fotografieren ohne Anmeldung; Freischaltung erst vor Servertransfer
 - Aktivierung mit zwei SMS-Stufen und anschließendem Upload-Login
 - korrigierte Portrait-/Landscape-Unterstützung und Nivellierungsachsen
-- WebRTC-Timeout, Fehlerweitergabe und sichere Wiederholbarkeit bei Abbruch
+- WebRTC-Timeout, Browser-ACK mit Paket-ID/Bytezahl/SHA-256,
+  Fehlerweitergabe und sichere Wiederholbarkeit bei Abbruch
+- gehärteter lokaler Companion-Receiver mit Pflicht-Pairing und exakter
+  Receipt-Prüfung
+- Keychain-Migration ohne Delete-vor-Add, Vordergrund-Uploadvertrag,
+  Kameraberechtigungs-Recovery und lokalisierte Berechtigungstexte
 - barrierearme Textfarben auf schwarzem Hintergrund
 - Release-Prüfliste und Regressionstests
 
 ## Verifikation
 
-- Simulatorbuild erfolgreich
-- signierter Build für ein verbundenes iPhone erfolgreich
-- 66 Unit-/Integrationstests erfolgreich
-- Erststart-UI-Test einschließlich Scrollbarkeit und unterer Safe Area
-  erfolgreich
+- sauberer arm64-Releasebuild: Version 3.9, Build 202608031930
+- 74 Unit-/Integrations-/Logiktests erfolgreich
+- 15 UI-/Launch-Tests: 12 erfolgreich, drei echte Netz-/Auth-E2E-Tests ohne
+  produktive Zugangsdaten beziehungsweise QR-Payload übersprungen
+- Erststart-UI-Test einschließlich Scrollbarkeit und unterer Safe Area sowie
+  Galerie-Uploaddialog mit wiederhergestelltem realem Testbestand erfolgreich
+- reales 1.849.171.856-Byte-Paket vom Companion mit Bytezahl und SHA-256
+  bestätigt; absichtlich falscher Hash mit HTTP 422 abgewiesen
 
 Noch offen sind die dokumentierten realen iPhone-Tests für beide
-Querformatrichtungen sowie vollständige WebRTC-/Cloud-End-to-End-Läufe unter
-unterschiedlichen Netzbedingungen. Der genaue Prüfstand steht in
+Querformatrichtungen, die Provisionierung und Prüfung eines produktiven
+TURN-Relays sowie vollständige WebRTC-/Cloud-End-to-End-Läufe. Sechs
+Strict-Concurrency-Warnungen im historischen `CameraManager` bleiben sichtbar
+und sind ebenfalls ausdrücklicher Prüfgegenstand. Der genaue Prüfstand steht in
 [`docs-mobile/RELEASE_3_9_VERIFICATION_20260803.md`](docs-mobile/RELEASE_3_9_VERIFICATION_20260803.md).
 Der dazugehörige eigenständige Produkt- und Sicherheitsvertrag steht in
 [`docs-mobile/EXTERNAL_REVIEW_CONTRACT.md`](docs-mobile/EXTERNAL_REVIEW_CONTRACT.md).

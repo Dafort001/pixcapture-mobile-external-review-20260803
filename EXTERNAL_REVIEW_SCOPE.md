@@ -6,7 +6,7 @@ keinen getrennten Zukunfts- oder Kandidatenstand mehr.
 ## Herkunft und Isolation
 
 - Aktueller lokaler Swift-Stand:
-  `3e56988ad081ab006d25edf88e560c49193c6237`
+  `010761ae8d03e0229e08fc0d469b3a14d1d70988`
 - Öffentlicher Prüfstand nach Übernahme auf `main`: siehe aktuelle HEAD-ID
 - Ursprünglicher App-Store-Ausgangsstand bleibt ausschließlich über den
   unveränderlichen Git-Tag `source-5f2fa402-ios-3.8` nachvollziehbar.
@@ -15,20 +15,30 @@ keinen getrennten Zukunfts- oder Kandidatenstand mehr.
 
 ## Inhalt der aktuellen Änderungen
 
-- cancellation-sicherer WebRTC-Timeout, Fehlerweitergabe und Cleanup
-- Auswertung browserseitig gemeldeter Übertragungsfehler
+- exakter WebRTC-Abschlussvertrag: Paket-ID, Bytezahl und SHA-256 müssen vom
+  Browser bestätigt werden; Fehler, Kanalabbruch und Timeout bleiben pending
+- gemeinsamer ICE-Konfigurationsvertrag mit optionalen kurzlebigen coturn-
+  Zugangsdaten; produktiver TURN-Dienst ist noch nicht provisioniert
+- lokaler Companion verlangt Pairing und akzeptiert nur ein exakt passendes
+  Erfolgs-Receipt ohne Warnungen
 - iPhone-Unterstützung für Portrait, Landscape Left und Landscape Right
-- viewportbezogene Nivellierung ohne zweite Landschaftsachsen-Drehung
+- einheitlicher Orientierungsresolver mit physischer Geräteorientierung als
+  Priorität und ohne zweite Landschaftsachsen-Drehung
 - Regressionstests für den beobachteten Fehlerwert `-89,8°`
 - Fotografieren und lokale Speicherung ohne Anmeldung
 - Freischaltung erst vor Servertransfer über zwei SMS-Stufen
 - Upload-Login mit E-Mail-Adresse und selbst gewähltem Web-Passwort
-- warmes kontrastreiches Greige statt orangefarbener Fließ-/Eingabetexte
+- hellblauer numerischer Leveltext statt rot/grüner Information allein
+- lokalisierte Hauptfehlerpfade und InfoPlist-Berechtigungstexte
+- sichere Keychain-Aktualisierung/Migration, atomarer Video-Stop und expliziter
+  Vordergrund-Uploadvertrag
 - expliziter UI-Test für Scrollbarkeit und untere Safe Area
 
 ## Nachweisstand
 
-Simulatorbuild, signierter iPhone-Build, 66 Unit-/Integrationstests und der
-gezielte Erststart-UI-Test sind erfolgreich. Reale Kamera-/Nivellierungstests
-auf dem iPhone sowie die vollständige Netzwerk-/Cloud-E2E-Matrix sind weiterhin
-offen und in der Release-Prüfliste ausdrücklich markiert.
+Der saubere arm64-Releasebuild 3.9 (202608031930), 74 Logiktests und 12 von 15
+UI-/Launch-Tests sind erfolgreich; drei echte Netz-/Auth-E2E-Tests wurden ohne
+produktive Zugangsdaten/QR erwartungsgemäß übersprungen. Reale Kamera-
+/Nivellierungstests, produktives TURN sowie die vollständige Netzwerk-/Cloud-
+E2E-Matrix sind weiterhin offen. Sechs Strict-Concurrency-Warnungen im
+`CameraManager` sind dokumentierte, nicht kaschierte Restarbeit.
