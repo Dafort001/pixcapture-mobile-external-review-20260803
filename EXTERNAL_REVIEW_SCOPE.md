@@ -5,7 +5,7 @@ der iOS-App in `ios/`. Außerhalb des Repos liegende interne Handovers sind kein
 Voraussetzung für die technische Prüfung.
 
 Die Kopie basiert auf dem privaten Mobile-Commit
-`685af1b1677e01147d35d68a51cf391b52c5793e`. Das öffentliche Repository ist
+`1877acb1c07b23512ad97ff889dbd12bd6fdd301`. Das öffentliche Repository ist
 technisch isoliert; Änderungen daran verändern das private Produktions-Repo
 nicht.
 

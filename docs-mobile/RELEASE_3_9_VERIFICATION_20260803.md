@@ -31,9 +31,11 @@ Build ersetzt keinen realen Geräte- oder Übertragungstest.
   Simulator zurückgespielt. Der Galerie-Upload-UI-Test wählt eine echte Serie,
   öffnet den Uploaddialog und bestätigt, dass Companion und Cloud sichtbar
   sind und der Companion-Start vor QR-Kopplung deaktiviert bleibt.
-- [x] Vollständiger Simulator-Testlauf: 86 Tests bestanden; drei echte
+- [x] Separater UI-/Launch-Simulatorlauf: 12 Tests bestanden; drei echte
   Netz-/Authentifizierungs-E2E-Szenarien wurden ohne produktive Zugangsdaten
-  beziehungsweise QR-Payload erwartungsgemäß übersprungen.
+  beziehungsweise QR-Payload erwartungsgemäß übersprungen. Der nach den
+  Grundriss-/RAW-Änderungen erneut ausgeführte Logiklauf umfasst die oben
+  genannten 82 bestandenen Tests.
 - [x] Der lokale Companion-Receiver nahm das reale Seeburg-Paket mit exakt
   1.849.171.856 Byte und korrektem SHA-256 an. Ein absichtlich falscher Hash
   ergab HTTP 422; keine beschädigte Zieldatei blieb zurück.

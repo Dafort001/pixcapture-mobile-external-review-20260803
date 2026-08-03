@@ -23,7 +23,7 @@ Prüfung weder erforderlich noch maßgeblich.
 - `docs-mobile/`: aktueller Prüfvertrag und Release-Testmatrix
 
 Der Prüfstand basiert auf dem privaten Mobile-Commit
-`685af1b1677e01147d35d68a51cf391b52c5793e`. Er ist ein überprüfter
+`1877acb1c07b23512ad97ff889dbd12bd6fdd301`. Er ist ein überprüfter
 Entwicklungskandidat, aber ausdrücklich noch keine App-Store-Freigabe: Die in
 der Testmatrix aufgeführten echten iPhone-, AR-, TURN- und Upload-End-to-End-
 Nachweise sind weiterhin offen.
