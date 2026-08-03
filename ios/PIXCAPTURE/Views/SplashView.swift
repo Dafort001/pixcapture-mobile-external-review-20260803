@@ -12,14 +12,16 @@ struct SplashView: View {
     static let lightBlue = Color(red: 108.0 / 255.0, green: 168.0 / 255.0, blue: 200.0 / 255.0)
     static let pink = Color(red: 227.0 / 255.0, green: 163.0 / 255.0, blue: 174.0 / 255.0)
     static let line = orange
-    static let fieldText = orange
-    static let infoText = Color.white.opacity(0.72)
+    static let fieldText = AppTheme.textOnDark
+    static let infoText = AppTheme.textOnDark.opacity(0.84)
     static let errorText = Color(red: 1.0, green: 111.0 / 255.0, blue: 97.0 / 255.0)
     static let panelFill = Color.white.opacity(0.06)
     static let panelBorder = Color.white.opacity(0.14)
-    static let panelText = Color.white.opacity(0.84)
-    static let panelMuted = Color.white.opacity(0.64)
+    static let panelText = AppTheme.textOnDarkStrong.opacity(0.94)
+    static let panelMuted = AppTheme.textOnDark.opacity(0.78)
   }
+
+  private static let registrationURL = URL(string: "https://pixcapture.app/auth/signin?mode=register")!
 
   @EnvironmentObject private var authService: AuthService
   @EnvironmentObject private var settings: AppSettings
@@ -222,6 +224,25 @@ struct SplashView: View {
         .tracking(0.4)
         .foregroundStyle(Palette.panelMuted)
         .fixedSize(horizontal: false, vertical: true)
+
+      Link(destination: Self.registrationURL) {
+        HStack(spacing: 8) {
+          Image(systemName: "safari")
+            .font(.system(size: 13, weight: .semibold))
+          Text(l10n("splash.onboarding.registerButton"))
+            .font(inter(size: 12, weight: .semibold))
+            .tracking(0.4)
+        }
+        .foregroundStyle(Palette.lightBlue)
+        .frame(maxWidth: .infinity, minHeight: 42)
+        .background(Palette.lightBlue.opacity(0.10))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+          RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .stroke(Palette.lightBlue.opacity(0.28), lineWidth: 1)
+        )
+      }
+      .buttonStyle(.plain)
     }
     .frame(width: width, alignment: .leading)
     .padding(.horizontal, 16)

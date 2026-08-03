@@ -9,6 +9,16 @@ enum AppTheme {
   static let stroke = Color.black.opacity(0.08)
   static let textPrimary = Color.black.opacity(0.84)
   static let textSecondary = Color.black.opacity(0.60)
+  static let textOnDark = Color(
+    red: 222.0 / 255.0,
+    green: 214.0 / 255.0,
+    blue: 204.0 / 255.0
+  )
+  static let textOnDarkStrong = Color(
+    red: 242.0 / 255.0,
+    green: 238.0 / 255.0,
+    blue: 232.0 / 255.0
+  )
   static let navOverlay = Color(red: 15.0 / 255.0, green: 24.0 / 255.0, blue: 39.0 / 255.0).opacity(0.88)
 }
 

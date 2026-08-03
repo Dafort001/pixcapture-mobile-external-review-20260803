@@ -23,7 +23,7 @@ The external reviewer should focus on `ios/PIXCAPTURE`, the Xcode project, iOS t
 
 `candidate/ios-3.9-upload-orientation-safety` is a deliberately small diff from
 the released snapshot. Its source provenance is local mobile commit
-`a43643cfdc7972020137984fe3bf931c6d5399e5`, based on the released source above.
+`6d650b2ab227a593452e05ce59510d2bccd2357f`, based on the released source above.
 It contains only:
 
 - cancellation-safe WebRTC timeout/failure propagation and connection cleanup;
@@ -31,10 +31,17 @@ It contains only:
 - restored iPhone Portrait/Landscape Left/Landscape Right configuration;
 - viewport-authoritative level mapping without a second landscape-axis rotation,
   plus regression coverage for the observed `-89.8°` error;
+- first-run access to capture and local storage without authentication, while
+  server transfer continues to require an approved account or valid
+  server-issued transfer QR;
+- German and English activation guidance for the two SMS stages, approval and
+  upload login, without claiming that an activation code is sent by email;
+- high-contrast warm-greige text on black instead of orange body/input text,
+  with automated contrast coverage;
 - the release-verification checklist;
 - the ignore rule for the separately archived inactive OpenCV artifact.
 
-This candidate has passed the simulator and signed real-device builds and 63
-unit/integration tests. It
-has not yet passed the required real-iPhone camera/orientation and network E2E
-matrix and is not an App Store release.
+This candidate has passed the simulator and signed real-device builds, 66
+unit/integration tests, and the targeted fresh-install offline-entry UI test.
+It has not yet passed the required real-iPhone camera/orientation and network
+E2E matrix and is not an App Store release.

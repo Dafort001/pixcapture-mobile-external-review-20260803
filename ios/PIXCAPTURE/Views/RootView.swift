@@ -64,7 +64,7 @@ struct RootView: View {
           OnboardingView(
             onDone: {
               hasSeenFirstRunOnboarding = true
-              currentScreen = (authService.isAuthenticated || isDemoMode) ? .start : .splash
+              currentScreen = .start
             },
             onLogin: {
               hasSeenFirstRunOnboarding = true
@@ -81,7 +81,7 @@ struct RootView: View {
               currentScreen = .start
             },
             onOpenHelp: { openHelp(from: .splash) },
-            onBackToStart: (authService.isAuthenticated || isDemoMode) ? {
+            onBackToStart: canUseLocalFeatures ? {
               currentScreen = .start
             } : nil
           )
@@ -128,7 +128,7 @@ struct RootView: View {
         case .help:
           HelpView(
             onBack: handleHelpBack,
-            backButtonTitle: (authService.isAuthenticated || isDemoMode) ? settings.localized("common.back") : settings.localized("help.backToLogin")
+            backButtonTitle: canUseLocalFeatures ? settings.localized("common.back") : settings.localized("help.backToLogin")
           )
         case .sunPlan:
           SunPlanView(onNavigate: { handleNavigation($0) })
@@ -145,7 +145,6 @@ struct RootView: View {
       handleIncomingURL(url)
     }
     .onAppear {
-      cameraModel.configureIfNeeded()
       if !hasSeenFirstRunOnboarding {
         currentScreen = .onboarding
         return
@@ -153,6 +152,8 @@ struct RootView: View {
       if authService.isAuthenticated && !isDemoMode {
         currentScreen = pendingExternalWebConnectURL == nil ? .start : .gallery
         prepareAuthenticatedLaunchIfNeeded()
+      } else {
+        currentScreen = .start
       }
     }
     .onChange(of: authService.isAuthenticated) { _, isAuthenticated in
@@ -163,7 +164,7 @@ struct RootView: View {
       } else {
         clearSelectedJobSelection()
         resetLaunchSetupState()
-        currentScreen = .splash
+        currentScreen = hasSeenFirstRunOnboarding ? .start : .onboarding
       }
     }
     .onChange(of: currentScreen) { _, screen in
@@ -250,7 +251,7 @@ struct RootView: View {
   }
 
   private func handleNavigation(_ target: AppScreen) {
-    guard authService.isAuthenticated || isDemoMode else { return }
+    guard canUseLocalFeatures else { return }
     if target == .help {
       openHelp(from: currentScreen)
       return
@@ -277,7 +278,7 @@ struct RootView: View {
   }
 
   private func handleHelpBack() {
-    if authService.isAuthenticated || isDemoMode {
+    if canUseLocalFeatures {
       let fallback: AppScreen = .start
       let target = helpReturnScreen == .help ? fallback : helpReturnScreen
       currentScreen = resolvedScreen(for: target)
@@ -289,7 +290,7 @@ struct RootView: View {
   private func handleIncomingURL(_ url: URL) {
     if looksLikeWebConnectURL(url) {
       pendingExternalWebConnectURL = url.absoluteString
-      if authService.isAuthenticated || isDemoMode {
+      if canUseLocalFeatures {
         currentScreen = .gallery
       } else {
         currentScreen = .splash
@@ -447,6 +448,10 @@ struct RootView: View {
       return true
     }
     return !settings.jobLabel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+  }
+
+  private var canUseLocalFeatures: Bool {
+    hasSeenFirstRunOnboarding || authService.isAuthenticated || isDemoMode
   }
 
   private func singleCustomerJobCandidate() -> JobInfo? {

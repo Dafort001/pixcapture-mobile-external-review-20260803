@@ -14,8 +14,15 @@ Build ersetzt keinen realen Geräte- oder Übertragungstest.
   als unterstützte iPhone-Ausrichtungen.
 - [x] App-Store-3.8-Fehler anhand Daniels Screenshots reproduziert: Portrait
   `R 0,0° / P 1,2°`, Landscape in gleicher Lage `R -89,8° / P 0,7°`.
-- [x] 63 Unit-/Integrationstests erfolgreich, einschließlich fünf neuer
-  Level-/Querformat-Regressionstests und vorhandener Galerie-Orientierungstests.
+- [x] 66 Unit-/Integrationstests erfolgreich, einschließlich fünf neuer
+  Level-/Querformat-Regressionstests, vorhandener Galerie-Orientierungstests
+  sowie Kontrast- und SMS-Aktivierungstests in Deutsch und Englisch.
+- [x] Gezielter Erststart-UI-Test erfolgreich: Ohne Anmeldung bis zum lokalen
+  Startbildschirm; keine Kamera-Berechtigungsabfrage, bevor der Nutzer die
+  Kamera bewusst auswählt.
+- [x] Erststart im Simulator visuell geprüft: Offline-Fotografie steht an
+  erster Stelle, beide SMS-Stufen sind erklärt, und Fließtext auf Schwarz nutzt
+  kontrastreiches warmes Greige statt Orange.
 - [x] Signierter Debug-Build für Daniels verbundenes iPhone 15 Pro Max
   erfolgreich; noch nicht installiert.
 - [ ] Vollständige UI-Suite: ein bestehender Galerie-Test benötigt Testdaten;
@@ -52,6 +59,11 @@ Build ersetzt keinen realen Geräte- oder Übertragungstest.
 
 ## Pflichtnachweis C – alternative Uploadwege und Datenintegrität
 
+- [ ] Frische Installation: ohne Registrierung fotografieren und Aufnahmen
+  nach App-Neustart weiterhin lokal vollständig vorfinden.
+- [ ] Erst beim Übertragungsversuch anmelden beziehungsweise einen gültigen
+  serverseitigen Übertragungs-QR verwenden; ohne Freigabe keine Serverdaten
+  erzeugen und keine lokalen Dateien verlieren.
 - [ ] Direkt-in-die-Cloud mit 3er-DNG-Serie vollständig.
 - [ ] Direkt-in-die-Cloud mit 5er-DNG-Serie vollständig.
 - [ ] Offline aufnehmen, später übertragen.
