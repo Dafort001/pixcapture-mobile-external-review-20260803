@@ -61,37 +61,93 @@ struct LevelOrientationTests {
     #expect(abs(transform.normalizedPitchForViewport + 2.5) < tolerance)
   }
 
-  @Test("Physical landscape-left maps to mirrored UI landscape-right")
-  func physicalLandscapeLeftUsesMirroredInterfaceOrientation() {
+  @Test("Level mapping keeps physical landscape-left axes")
+  func levelMappingKeepsPhysicalLandscapeLeft() {
     #expect(
-      LevelMonitor.resolveLevelOrientation(
+      LevelMonitor.resolveLevelDeviceOrientation(
         deviceOrientation: .landscapeLeft,
         sceneOrientation: .portrait
-      ) == .landscapeRight
+      ) == .landscapeLeft
     )
   }
 
-  @Test("Physical landscape overrides a portrait-locked scene")
-  func physicalLandscapeOverridesPortraitLockedScene() {
-    let orientation = LevelMonitor.resolveLevelOrientation(
+  @Test("Physical landscape-right overrides a portrait-locked scene for gravity")
+  func physicalLandscapeRightOverridesPortraitLockedSceneForGravity() {
+    let orientation = LevelMonitor.resolveLevelDeviceOrientation(
       deviceOrientation: .landscapeRight,
       sceneOrientation: .portrait
     )
-    #expect(orientation == .landscapeLeft)
+    #expect(orientation == .landscapeRight)
     let mapped = LevelMonitor.map(
-      gravity: CMAcceleration(x: -1, y: 0, z: 0),
+      gravity: CMAcceleration(x: 1, y: 0, z: 0),
       for: orientation
     )
     #expect(abs(mapped.roll) < tolerance)
   }
 
-  @Test("Scene orientation is used only when physical orientation is unavailable")
-  func sceneOrientationIsFallback() {
+  @Test("Scene fallback is converted back to physical landscape axes")
+  func sceneOrientationFallbackUsesPhysicalAxes() {
     #expect(
-      LevelMonitor.resolveLevelOrientation(
+      LevelMonitor.resolveLevelDeviceOrientation(
         deviceOrientation: .faceUp,
         sceneOrientation: .landscapeRight
+      ) == .landscapeLeft
+    )
+  }
+
+  @Test("Camera interface orientation mirrors physical landscape names")
+  func cameraInterfaceOrientationMirrorsPhysicalLandscape() {
+    #expect(
+      LevelMonitor.resolveInterfaceOrientation(
+        deviceOrientation: .landscapeLeft,
+        sceneOrientation: .portrait
       ) == .landscapeRight
     )
+    #expect(
+      LevelMonitor.resolveInterfaceOrientation(
+        deviceOrientation: .landscapeRight,
+        sceneOrientation: .portrait
+      ) == .landscapeLeft
+    )
+  }
+
+  @Test("Screenshot gravity overrides stale portrait device and scene orientation")
+  func screenshotGravityOverridesStalePortraitOrientation() {
+    let gravity = CMAcceleration(x: -0.996, y: -0.052, z: -0.075)
+    let orientation = LevelMonitor.resolveLevelDeviceOrientation(
+      gravity: gravity,
+      reportedDeviceOrientation: .portrait,
+      sceneOrientation: .portrait,
+      previousOrientation: .portrait
+    )
+
+    #expect(orientation == .landscapeLeft)
+    let corrected = LevelMonitor.map(gravity: gravity, for: orientation)
+    #expect(abs((corrected.roll * 180 / .pi) - 2.99) < 0.1)
+    #expect(abs((corrected.pitch * 180 / .pi) + 4.29) < 0.1)
+  }
+
+  @Test("Opposite landscape gravity overrides stale portrait orientation")
+  func oppositeLandscapeGravityOverridesStalePortraitOrientation() {
+    let orientation = LevelMonitor.resolveLevelDeviceOrientation(
+      gravity: CMAcceleration(x: 0.998, y: -0.035, z: 0),
+      reportedDeviceOrientation: .portrait,
+      sceneOrientation: .portrait,
+      previousOrientation: .portrait
+    )
+
+    #expect(orientation == .landscapeRight)
+  }
+
+  @Test("Face-up gravity retains the previous physical viewport axis")
+  func faceUpGravityRetainsPreviousAxis() {
+    let orientation = LevelMonitor.resolveLevelDeviceOrientation(
+      gravity: CMAcceleration(x: 0.02, y: -0.01, z: -0.999),
+      reportedDeviceOrientation: .faceUp,
+      sceneOrientation: .portrait,
+      previousOrientation: .landscapeLeft
+    )
+
+    #expect(orientation == .landscapeLeft)
   }
 }

@@ -16,7 +16,7 @@ Build ersetzt keinen realen Geräte- oder Übertragungstest.
   als unterstützte iPhone-Ausrichtungen.
 - [x] App-Store-3.8-Fehler anhand Daniels Screenshots reproduziert: Portrait
   `R 0,0° / P 1,2°`, Landscape in gleicher Lage `R -89,8° / P 0,7°`.
-- [x] 82 Unit-/Integrations-/Logiktests erfolgreich, einschließlich neuer
+- [x] 86 Unit-/Integrations-/Logiktests erfolgreich, einschließlich neuer
   Level-/Querformat-, Browser-ACK-, Companion-Receipt-, Kontrast- und
   SMS-Aktivierungstests in Deutsch und Englisch sowie RAW-Auswahl,
   Polygongeometrie, Exporttrennung und EXIF-Rückwärtskompatibilität.
@@ -41,9 +41,10 @@ Build ersetzt keinen realen Geräte- oder Übertragungstest.
   ergab HTTP 422; keine beschädigte Zieldatei blieb zurück.
 - [x] Browser-Gegenstück: fünf Receipt-/ICE-Konfigurationstests sowie
   TypeScript-Typprüfung erfolgreich.
-- [x] Signierter Debug-Build für Daniels verbundenes iPhone 15 Pro Max
-  erfolgreich; bewusst noch nicht installiert, damit dessen Kundendaten nicht
-  berührt werden.
+- [x] Optimierter und signierter Release-Gerätebuild für Daniels verbundenes
+  iPhone 15 Pro Max erfolgreich und ohne vorherige Deinstallation über die
+  vorhandene App installiert. Danach waren weiterhin alle 122 lokalen
+  Upload-Protokolleinträge vorhanden.
 - [x] Foto-/Video-/Panorama-Uploadpakete enthalten keine Grundrissdateien mehr.
   Interne Panorama-Zuordnungsmetadaten werden nicht mit übertragen.
 - [x] Der freigebbare Grundriss besteht nur noch aus bemaßtem PNG und visuellem
@@ -63,10 +64,15 @@ Build ersetzt keinen realen Geräte- oder Übertragungstest.
 
 ## Noch nicht als produktionsreif nachgewiesen
 
-- Die Orientierungsrechnung und die beiden Querformatdeklarationen sind im
-  Code und durch Regressionstests korrigiert. Das sichtbare grüne Quadrat muss
-  dennoch auf einem echten iPhone in Portrait, Landscape Left und Landscape
-  Right nachgewiesen werden.
+- Nivellierung und Aufnahmeorientierung sind auf Daniels echtem iPhone 15 Pro
+  Max in beiden physischen Querformatlagen nachgewiesen. Die bewusst
+  portraitfixierte Bedienoberfläche bleibt unverändert; Sensor-Nivellierung und
+  Aufnahme-/EXIF-Orientierung sind davon getrennt. Zwei reale DNG-Aufnahmen
+  wurden aus dem App-Container gelesen: `landscapeRight` ergab 4032 x 3024 mit
+  EXIF-Orientierung 1, `landscapeLeft` 4032 x 3024 mit EXIF-Orientierung 3.
+  Beide Renderings wurden auf korrekte Darstellung kontrolliert. Portrait ist
+  anhand des früheren Screenshots nachgewiesen, eine neue 3.9-Aufnahme in
+  Portrait sowie Galerie-/Exportprüfung auf einem zweiten Gerät bleiben offen.
 - Der WebRTC-Vertrag wartet jetzt auf eine exakte Browserbestätigung aus
   Paket-ID, Bytezahl und SHA-256 und beendet Fehler/Timeouts statt bei 0 KB zu
   hängen. Ein produktiver TURN-Dienst ist jedoch noch nicht provisioniert;
@@ -81,18 +87,29 @@ Build ersetzt keinen realen Geräte- oder Übertragungstest.
 - Grundriss-Polygonaufnahme ohne LiDAR, 90°-Hilfe und anschließende Bearbeitung
   sind im Simulator nur logisch/buildseitig prüfbar und müssen auf einem
   echten Gerät mit AR-Tracking gegen reale Maße kontrolliert werden.
+- Die sichtbaren Grundriss-Erklärtexte entsprechen noch dem früheren
+  Funktionsumfang. Vor einer Apple-Einreichung müssen Grundriss-Ansicht,
+  Hilfe/Einführung und gegebenenfalls App-Store-Beschreibung mit dem tatsächlich
+  implementierten 3.9-Verhalten abgeglichen und verständlich neu formuliert
+  werden.
 
 ## Pflichtnachweis A – Kamera und Nivellierung auf echtem iPhone
 
 - [ ] Portrait: Anzeige wird bei waagerechtem Gerät grün; Screenshot und
   angezeigte Gradwerte sichern.
-- [ ] Landscape Left: gleicher Nachweis.
-- [ ] Landscape Right: gleicher Nachweis.
-- [ ] Je Ausrichtung mindestens eine reale Aufnahme erzeugen.
+- [x] Landscape Left: grünes, gerades und im Referenzrahmen zentriertes Quadrat
+  bei `R 0,4° / P 1,9°` real nachgewiesen.
+- [x] Landscape Right: grünes, gerades und im Referenzrahmen zentriertes
+  Quadrat bei `R -0,4° / P -0,8°` real nachgewiesen.
+- [ ] Je Ausrichtung mindestens eine reale Aufnahme erzeugen. Beide
+  Querformatlagen sind nachgewiesen; eine neue 3.9-Portraitaufnahme fehlt noch.
 - [ ] Dateien in Galerie, Export und auf einem zweiten Gerät öffnen und auf
-  korrekte Pixel-/EXIF-Orientierung prüfen.
-- [ ] Vorschau, Bedienelemente, Safe Areas und Rotation während einer laufenden
-  Kamerasitzung prüfen.
+  korrekte Pixel-/EXIF-Orientierung prüfen. Die beiden Querformat-DNGs wurden
+  bereits direkt aus dem App-Container gelesen und gerendert; Galerie, Export
+  und zweites Gerät fehlen noch.
+- [x] Vorschau und feststehende Bedienelemente in beiden Querformatlagen während
+  einer laufenden Kamerasitzung geprüft. Die UI bleibt absichtlich fixiert;
+  nur Nivellier- und Aufnahmekoordinaten folgen der physischen Gerätehaltung.
 
 ## Pflichtnachweis B – Browser-Companion/WebRTC
 

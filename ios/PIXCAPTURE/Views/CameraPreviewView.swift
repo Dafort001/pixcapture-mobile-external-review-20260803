@@ -74,7 +74,7 @@ struct CameraPreviewView: UIViewRepresentable {
         .compactMap({ $0 as? UIWindowScene })
         .first(where: { $0.activationState == .foregroundActive })?
         .effectiveGeometry.interfaceOrientation
-      return LevelMonitor.resolveLevelOrientation(
+      return LevelMonitor.resolveInterfaceOrientation(
         deviceOrientation: UIDevice.current.orientation,
         sceneOrientation: sceneOrientation
       )

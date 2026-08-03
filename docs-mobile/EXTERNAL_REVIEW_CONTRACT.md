@@ -39,11 +39,11 @@ Sicherheitsvertrag. Externe Dateien sind dafür nicht erforderlich.
 ## Kamera und Orientierung
 
 - iPhone unterstützt Portrait, Landscape Left und Landscape Right.
-- Kamera-Vorschau, Nivellierung, Keystone-Korrektur, Aufnahme und gespeicherte
-  Pixel-/EXIF-Orientierung müssen denselben Resolver verwenden. Die physische
-  Geräteorientierung hat Vorrang, weil eine noch portrait gemeldete Scene beim
-  Drehen des Telefons nicht erneut den beobachteten 90-Grad-Fehler erzeugen
-  darf.
+- Die Bedienoberfläche und Vorschau bleiben aus UX-Gründen portraitfixiert.
+  Nivellierung und Aufnahme-/EXIF-Orientierung müssen davon getrennt die aus
+  CoreMotion-Schwerkraft bestimmte physische Gerätehaltung verwenden. Eine
+  weiterhin als Portrait gemeldete Scene darf beim Drehen des Telefons nicht
+  erneut den beobachteten 90-Grad-Fehler erzeugen.
 - Bereits viewportbezogene Roll-/Pitch-Werte dürfen im Single-Shot-Pfad nicht
   ein zweites Mal um die Landschaftsachse gedreht werden.
 - Der reproduzierte Fehler war: gleiche physische Lage, Portrait `R 0,0° / P
@@ -62,6 +62,8 @@ Sicherheitsvertrag. Externe Dateien sind dafür nicht erforderlich.
 ## Freigabegrenze
 
 - Build- und Unit-Test-Erfolg allein ist keine App-Store-Freigabe.
-- Vor einer Veröffentlichung bleiben die realen iPhone-Nachweise für beide
-  Querformatrichtungen sowie WebRTC-/Cloud-End-to-End-Läufe einschließlich
+- Beide physischen Querformatrichtungen sind für Nivellierung und reale
+  DNG-/EXIF-Aufnahmen auf einem iPhone 15 Pro Max nachgewiesen. Vor einer
+  Veröffentlichung bleiben eine neue Portraitaufnahme, Galerie-/Exportprüfung,
+  Grundriss-Textabgleich sowie WebRTC-/Cloud-End-to-End-Läufe einschließlich
   Fehler, Retry, großem Paket und Datenintegritätsabgleich verpflichtend.

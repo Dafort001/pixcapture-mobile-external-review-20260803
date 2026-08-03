@@ -321,6 +321,8 @@ final class CameraManager: NSObject, ObservableObject {
   private var highlightWarningLatched = false
   private var levelMonitoringEnabled = true
   private var hasLevelSample = false
+  private var hasOrientationSample = false
+  private var latestLevelDeviceOrientation: UIDeviceOrientation = .portrait
   private var storedFocusPoint: CGPoint = CGPoint(x: 0.5, y: 0.5)
   private var storedFocusLockEnabled = false
   private var lastLensSwitchUptime: TimeInterval = 0
@@ -351,11 +353,15 @@ final class CameraManager: NSObject, ObservableObject {
 
     levelMonitor.onMotionSample = { [weak self] sample in
       DispatchQueue.main.async {
-        self?.levelAngle = sample.roll
-        self?.levelPitch = sample.pitch
-        self?.stabilityScore = sample.stabilityScore
-        self?.stabilityState = sample.stabilityState
-        self?.hasLevelSample = true
+        guard let self else { return }
+        self.latestLevelDeviceOrientation = sample.deviceOrientation
+        self.hasOrientationSample = true
+        guard self.levelMonitoringEnabled else { return }
+        self.levelAngle = sample.roll
+        self.levelPitch = sample.pitch
+        self.stabilityScore = sample.stabilityScore
+        self.stabilityState = sample.stabilityState
+        self.hasLevelSample = true
       }
     }
 
@@ -397,8 +403,11 @@ final class CameraManager: NSObject, ObservableObject {
   }
 
   private func applyLevelMonitoringState() {
-    guard isSessionRunning, levelMonitoringEnabled else {
+    // Physical orientation is also required for capture rotation and EXIF,
+    // even when the user hides the leveling overlay.
+    guard isSessionRunning else {
       levelMonitor.stop()
+      hasOrientationSample = false
       return
     }
     levelMonitor.start()
@@ -2533,29 +2542,25 @@ final class CameraManager: NSObject, ObservableObject {
   }
 
   private func currentCaptureVideoOrientation() -> CaptureOrientation {
-    let resolvedOrientation = LevelMonitor.resolveLevelOrientation(
-      deviceOrientation: UIDevice.current.orientation,
-      sceneOrientation: preferredForegroundWindowScene()?.effectiveGeometry.interfaceOrientation
-    )
+    // A portrait-locked camera scene can keep both UIDeviceOrientation and
+    // UIInterfaceOrientation on portrait while the phone is physically held
+    // in landscape. LevelMonitor has already resolved that physical axis from
+    // gravity, so use the same confirmed orientation for capture and EXIF.
+    let resolvedOrientation: UIInterfaceOrientation
+    if hasOrientationSample {
+      resolvedOrientation = LevelMonitor.resolveInterfaceOrientation(
+        deviceOrientation: latestLevelDeviceOrientation,
+        sceneOrientation: nil
+      )
+    } else {
+      resolvedOrientation = LevelMonitor.resolveInterfaceOrientation(
+        deviceOrientation: UIDevice.current.orientation,
+        sceneOrientation: preferredForegroundWindowScene()?.effectiveGeometry.interfaceOrientation
+      )
+    }
     if let mappedOrientation = captureOrientation(from: resolvedOrientation) {
       lastCaptureOrientation = normalizedCaptureOrientation(mappedOrientation)
       return lastCaptureOrientation
-    }
-
-    // Motion fallback: when UIDevice orientation is unknown/faceUp/faceDown.
-    let roll = levelAngle
-    if abs(roll) > 45 {
-      if roll < 0 {
-        lastCaptureOrientation = .landscapeRight
-      } else {
-        lastCaptureOrientation = .landscapeLeft
-      }
-      return lastCaptureOrientation
-    }
-    // Do not infer portrait vs portraitUpsideDown from pitch.
-    // On faceUp/faceDown this signal can flip, causing 180° portrait errors.
-    if lastCaptureOrientation == .landscapeLeft || lastCaptureOrientation == .landscapeRight {
-      lastCaptureOrientation = .portrait
     }
 
     lastCaptureOrientation = normalizedCaptureOrientation(lastCaptureOrientation)

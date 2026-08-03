@@ -5,7 +5,7 @@ der iOS-App in `ios/`. Außerhalb des Repos liegende interne Handovers sind kein
 Voraussetzung für die technische Prüfung.
 
 Die Kopie basiert auf dem privaten Mobile-Commit
-`1877acb1c07b23512ad97ff889dbd12bd6fdd301`. Das öffentliche Repository ist
+`2a276e091688b96d817aea6e6d4734051212ca94`. Das öffentliche Repository ist
 technisch isoliert; Änderungen daran verändern das private Produktions-Repo
 nicht.
 
@@ -39,8 +39,11 @@ nicht.
 
 ## Nachweis und Grenzen
 
-Der aktuelle Simulatorlauf umfasst 82 bestandene Unit-/Integrations-/
-Logiktests. Build und Tests ersetzen nicht die in
-`docs-mobile/RELEASE_3_9_VERIFICATION_20260803.md` aufgeführten realen
-iPhone-, AR-, Netz- und End-to-End-Prüfungen. Bis diese protokolliert sind, ist
-3.9 nicht zur Apple-Einreichung freigegeben.
+Der aktuelle Simulatorlauf umfasst 86 bestandene Unit-/Integrations-/
+Logiktests. Die beiden physischen Querformatlagen, die zentrierte grüne
+Nivellieranzeige und zwei reale DNG-/EXIF-Orientierungen wurden auf einem
+iPhone 15 Pro Max geprüft. Diese Nachweise ersetzen nicht die übrigen in
+`docs-mobile/RELEASE_3_9_VERIFICATION_20260803.md` aufgeführten Portrait-,
+Galerie-/Export-, AR-, Netz- und End-to-End-Prüfungen. Auch die sichtbaren
+Grundriss-Erklärtexte müssen noch an den geänderten Funktionsumfang angepasst
+werden. Bis dahin ist 3.9 nicht zur Apple-Einreichung freigegeben.

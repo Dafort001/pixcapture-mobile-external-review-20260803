@@ -10,15 +10,16 @@ struct LevelOverlayView: View {
     let pitchNormalized = normalizeAngle(pitch)
     let rollDegrees = rollNormalized * 180 / .pi
     let pitchDegrees = pitchNormalized * 180 / .pi
+    let isVisuallyAligned = max(abs(rollDegrees), abs(pitchDegrees)) < 2.0
     let stateColor = statusColor(rollDegrees: rollDegrees, pitchDegrees: pitchDegrees)
-    let rotation = clampedRotation(rollNormalized)
+    let rotation = isVisuallyAligned ? 0 : clampedRotation(rollNormalized)
 
     return GeometryReader { proxy in
       let base = min(max(min(proxy.size.width, proxy.size.height) * 0.28, 120), 180)
       let active = base * 0.78
       let cross = base * 1.45
-      let xOffset = clampedOffset(rollNormalized, scale: base * 0.85, limit: base * 0.32)
-      let yOffset = clampedOffset(pitchNormalized, scale: base * 0.85, limit: base * 0.32)
+      let xOffset = isVisuallyAligned ? 0 : clampedOffset(rollNormalized, scale: base * 0.85, limit: base * 0.32)
+      let yOffset = isVisuallyAligned ? 0 : clampedOffset(pitchNormalized, scale: base * 0.85, limit: base * 0.32)
 
       ZStack {
         referenceSquare(size: base)
