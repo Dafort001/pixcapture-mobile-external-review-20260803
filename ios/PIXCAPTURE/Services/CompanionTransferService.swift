@@ -20,14 +20,20 @@ final class CompanionTransferService: ObservableObject {
 
   func testConnection(using settings: AppSettings) async {
     let host = settings.companionHost.trimmingCharacters(in: .whitespacesAndNewlines)
+    let pairingCode = settings.companionPairingCode.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !host.isEmpty else {
       isConnected = false
-      statusMessage = "Bitte Host/IP eintragen."
+      statusMessage = NSLocalizedString("upload.companion.error.hostMissing", comment: "")
+      return
+    }
+    guard !pairingCode.isEmpty else {
+      isConnected = false
+      statusMessage = NSLocalizedString("upload.companion.error.pairingMissing", comment: "")
       return
     }
     guard let baseURL = buildBaseURL(settings: settings) else {
       isConnected = false
-      statusMessage = "Ungültige Host-Konfiguration."
+      statusMessage = NSLocalizedString("upload.companion.error.hostInvalid", comment: "")
       return
     }
 
@@ -36,17 +42,24 @@ final class CompanionTransferService: ObservableObject {
     request.timeoutInterval = 4.0
 
     do {
-      let (_, response) = try await URLSession.shared.data(for: request)
-      if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {
+      let (data, response) = try await URLSession.shared.data(for: request)
+      let health = try? JSONDecoder().decode(CompanionHealthResponse.self, from: data)
+      if let http = response as? HTTPURLResponse,
+         (200...299).contains(http.statusCode),
+         health?.ok == true,
+         health?.pairingRequired == true {
         isConnected = true
-        statusMessage = "WLAN-Verbindung erfolgreich."
+        statusMessage = NSLocalizedString("upload.companion.connection.success", comment: "")
       } else {
         isConnected = false
-        statusMessage = "Rechner erreichbar, aber Companion-Endpunkt antwortet nicht wie erwartet."
+        statusMessage = NSLocalizedString("upload.companion.error.unexpectedEndpoint", comment: "")
       }
     } catch {
       isConnected = false
-      statusMessage = "Verbindung fehlgeschlagen: \(error.localizedDescription)"
+      statusMessage = String(
+        format: NSLocalizedString("upload.companion.error.connection.format", comment: ""),
+        error.localizedDescription
+      )
     }
   }
 
@@ -108,5 +121,15 @@ final class CompanionTransferService: ObservableObject {
     components.host = host
     components.port = settings.companionPort
     return components.url
+  }
+}
+
+private struct CompanionHealthResponse: Decodable {
+  let ok: Bool
+  let pairingRequired: Bool
+
+  enum CodingKeys: String, CodingKey {
+    case ok
+    case pairingRequired = "pairing_required"
   }
 }

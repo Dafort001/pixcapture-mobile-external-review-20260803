@@ -36,26 +36,26 @@ final class VideoTakeRecorder: NSObject, ObservableObject {
     var titleText: String {
       switch self {
       case .stable:
-        return "Stabil"
+        return NSLocalizedString("video.motion.stable.title", comment: "")
       case .tooFast:
-        return "Zu schnell"
+        return NSLocalizedString("video.motion.tooFast.title", comment: "")
       case .tooSlow:
-        return "Zu langsam"
+        return NSLocalizedString("video.motion.tooSlow.title", comment: "")
       case .tooRocky:
-        return "Zu unruhig"
+        return NSLocalizedString("video.motion.tooRocky.title", comment: "")
       }
     }
 
     var detailText: String {
       switch self {
       case .stable:
-        return "Bewegung ist gleichmäßig."
+        return NSLocalizedString("video.motion.stable.detail", comment: "")
       case .tooFast:
-        return "Langsamer bewegen und kleinere Schwenks nutzen."
+        return NSLocalizedString("video.motion.tooFast.detail", comment: "")
       case .tooSlow:
-        return "Etwas gleichmäßiger vorwärts bewegen."
+        return NSLocalizedString("video.motion.tooSlow.detail", comment: "")
       case .tooRocky:
-        return "Gerät ruhiger halten, Ellbogen anlegen."
+        return NSLocalizedString("video.motion.tooRocky.detail", comment: "")
       }
     }
   }
@@ -340,15 +340,18 @@ final class VideoTakeRecorder: NSObject, ObservableObject {
     var errorDescription: String? {
       switch self {
       case .noCamera:
-        return "Keine Kamera verfügbar."
+        return NSLocalizedString("video.error.noCamera", comment: "")
       case .video4k60NotSupported:
-        return "4K/60fps wird auf diesem Gerät nicht unterstützt."
+        return NSLocalizedString("video.error.4k60Unsupported", comment: "")
       case .notConfigured:
-        return "Video-Recorder ist nicht konfiguriert."
+        return NSLocalizedString("video.error.notConfigured", comment: "")
       case .writerFailed(let message):
-        return "Video-Export fehlgeschlagen: \(message)"
+        return String(
+          format: NSLocalizedString("video.error.export.format", comment: ""),
+          message
+        )
       case .recordingNotActive:
-        return "Keine aktive Aufnahme."
+        return NSLocalizedString("video.error.notRecording", comment: "")
       }
     }
   }
@@ -383,7 +386,9 @@ final class VideoTakeRecorder: NSObject, ObservableObject {
 
         // Use a stable 4K/30 profile for dataset capture.
         if try !self.applyPreferred4KFormat(device: device) {
-          DispatchQueue.main.async { self.warningMessage = "4K wird auf diesem Objektiv nicht unterstützt." }
+          DispatchQueue.main.async {
+            self.warningMessage = NSLocalizedString("video.error.lens4kUnsupported", comment: "")
+          }
         }
         self.fallbackHorizontalFOVDegrees = Double(device.activeFormat.videoFieldOfView)
 
@@ -512,13 +517,13 @@ final class VideoTakeRecorder: NSObject, ObservableObject {
 
     switch reason {
     case .audioDeviceInUseByAnotherClient, .videoDeviceInUseByAnotherClient:
-      warningMessage = "Kamera wird gerade von einer anderen App verwendet."
+      warningMessage = NSLocalizedString("camera.interruption.inUse", comment: "")
     case .videoDeviceNotAvailableWithMultipleForegroundApps:
-      warningMessage = "Kamera nicht verfügbar (Mehrfach-Apps)."
+      warningMessage = NSLocalizedString("camera.interruption.multipleApps", comment: "")
     case .videoDeviceNotAvailableDueToSystemPressure:
-      warningMessage = "Kamera pausiert (Systemlast)."
+      warningMessage = NSLocalizedString("camera.interruption.systemPressure", comment: "")
     default:
-      warningMessage = "Kamera wurde unterbrochen."
+      warningMessage = NSLocalizedString("video.error.cameraInterrupted", comment: "")
     }
   }
 
@@ -527,7 +532,9 @@ final class VideoTakeRecorder: NSObject, ObservableObject {
       guard let self, let device = self.videoDevice else { return }
 
       if self.isRecording {
-        DispatchQueue.main.async { self.warningMessage = "Zoom ist während der Aufnahme deaktiviert." }
+        DispatchQueue.main.async {
+          self.warningMessage = NSLocalizedString("video.error.zoomWhileRecording", comment: "")
+        }
         return
       }
 
@@ -553,7 +560,9 @@ final class VideoTakeRecorder: NSObject, ObservableObject {
         self.refreshZoomState(selectedPreset: preset)
 
         if preset < 1.0 && targetDevice.deviceType != .builtInUltraWideCamera {
-          DispatchQueue.main.async { self.warningMessage = "Ultraweit (0,5x) ist auf diesem Gerät nicht verfügbar." }
+          DispatchQueue.main.async {
+            self.warningMessage = NSLocalizedString("video.error.ultraWideUnavailable", comment: "")
+          }
         }
       } catch {
         DispatchQueue.main.async { self.warningMessage = error.localizedDescription }
@@ -574,7 +583,7 @@ final class VideoTakeRecorder: NSObject, ObservableObject {
       guard let self else { return }
       if self.isRecording {
         DispatchQueue.main.async {
-          self.warningMessage = "Stabilisierung kann während der Aufnahme nicht geändert werden."
+          self.warningMessage = NSLocalizedString("video.error.stabilizationWhileRecording", comment: "")
         }
         return
       }
@@ -693,7 +702,7 @@ final class VideoTakeRecorder: NSObject, ObservableObject {
       DispatchQueue.main.async { self.warningMessage = nil }
       if arSupported && requiresNonMainLens {
         DispatchQueue.main.async {
-          self.warningMessage = "AR-Tracking ist nur mit 1x verfügbar. Aufnahme läuft mit gewähltem Objektiv ohne AR-Tracking."
+          self.warningMessage = NSLocalizedString("video.warning.arTracking1xOnly", comment: "")
         }
       }
       self.hasWrittenIntrinsics = false
@@ -837,7 +846,7 @@ final class VideoTakeRecorder: NSObject, ObservableObject {
             )
           }
         } else {
-          throw RecorderError.writerFailed("AVAssetWriterInput konnte nicht hinzugefügt werden.")
+          throw RecorderError.writerFailed(NSLocalizedString("video.error.writerInput", comment: ""))
         }
 
         self.startMotionUpdates()
@@ -887,12 +896,14 @@ final class VideoTakeRecorder: NSObject, ObservableObject {
   func stopRecording(onFinished: @escaping (Result<RecordingResult, Error>) -> Void) {
     sessionQueue.async { [weak self] in
       guard let self else { return }
-      guard self.isRecording else {
+      let wasRecording = self.outputQueue.sync {
+        guard self.recordingActive else { return false }
+        self.recordingActive = false
+        return true
+      }
+      guard wasRecording else {
         DispatchQueue.main.async { onFinished(.failure(RecorderError.recordingNotActive)) }
         return
-      }
-      self.outputQueue.sync {
-        self.recordingActive = false
       }
       DispatchQueue.main.async {
         self.motionGuideState = .stable
@@ -947,7 +958,8 @@ final class VideoTakeRecorder: NSObject, ObservableObject {
       guard let self else { return }
 
       if let status = writer?.status, status == .failed {
-        let message = writer?.error?.localizedDescription ?? "Unbekannter Fehler"
+        let message = writer?.error?.localizedDescription
+          ?? NSLocalizedString("common.unknownError", comment: "")
         DispatchQueue.main.async {
           self.recordStartDate = nil
           self.arStartTimestamp = nil
@@ -1201,13 +1213,13 @@ final class VideoTakeRecorder: NSObject, ObservableObject {
   nonisolated private func motionGuideMessage(for state: MotionGuideState) -> String {
     switch state {
     case .stable:
-      return "Bewegung ist gleichmäßig."
+      return NSLocalizedString("video.motion.stable.detail", comment: "")
     case .tooFast:
-      return "Langsamer bewegen und kleinere Schwenks nutzen."
+      return NSLocalizedString("video.motion.tooFast.detail", comment: "")
     case .tooSlow:
-      return "Etwas gleichmäßiger vorwärts bewegen."
+      return NSLocalizedString("video.motion.tooSlow.detail", comment: "")
     case .tooRocky:
-      return "Gerät ruhiger halten, Ellbogen anlegen."
+      return NSLocalizedString("video.motion.tooRocky.detail", comment: "")
     }
   }
 
@@ -1360,7 +1372,7 @@ final class VideoTakeRecorder: NSObject, ObservableObject {
 
     let content = lines.joined(separator: "\n") + "\n"
     guard let data = content.data(using: .utf8) else {
-      throw RecorderError.writerFailed("CSV Encoding fehlgeschlagen.")
+      throw RecorderError.writerFailed(NSLocalizedString("video.error.csvEncoding", comment: ""))
     }
     try data.write(to: url, options: [.atomic])
   }
@@ -1848,14 +1860,18 @@ final class VideoTakeRecorder: NSObject, ObservableObject {
     do {
       let input = try AVCaptureDeviceInput(device: device)
       guard session.canAddInput(input) else {
-        DispatchQueue.main.async { self.warningMessage = "Kamera konnte nicht umgeschaltet werden." }
+        DispatchQueue.main.async {
+          self.warningMessage = NSLocalizedString("video.error.cameraSwitch", comment: "")
+        }
         return false
       }
       session.addInput(input)
       videoDevice = device
 
       if try !applyPreferred4KFormat(device: device) {
-        DispatchQueue.main.async { self.warningMessage = "Gewähltes Objektiv unterstützt kein 4K-Profil." }
+        DispatchQueue.main.async {
+          self.warningMessage = NSLocalizedString("video.error.selectedLens4kUnsupported", comment: "")
+        }
       }
       self.fallbackHorizontalFOVDegrees = Double(device.activeFormat.videoFieldOfView)
 
@@ -1941,7 +1957,8 @@ extension VideoTakeRecorder {
     let callbackUptime = ProcessInfo.processInfo.systemUptime
     if firstPTS == nil {
       if writer.status == .failed {
-        let message = writer.error?.localizedDescription ?? "startWriting fehlgeschlagen."
+        let message = writer.error?.localizedDescription
+          ?? NSLocalizedString("video.error.startWriting", comment: "")
         DispatchQueue.main.async {
           self.warningMessage = RecorderError.writerFailed(message).localizedDescription
         }
@@ -1980,7 +1997,11 @@ extension VideoTakeRecorder {
           if writer.startWriting() {
             writer.startSession(atSourceTime: .zero)
           } else {
-            DispatchQueue.main.async { self.warningMessage = RecorderError.writerFailed("startWriting fehlgeschlagen.").localizedDescription }
+            DispatchQueue.main.async {
+              self.warningMessage = RecorderError.writerFailed(
+                NSLocalizedString("video.error.startWriting", comment: "")
+              ).localizedDescription
+            }
             return
           }
         }
@@ -2118,7 +2139,8 @@ extension VideoTakeRecorder {
     let frameTimestamp = snapshot.timestamp
     if arStartTimestamp == nil {
       if writer.status == .failed {
-        let message = writer.error?.localizedDescription ?? "startWriting fehlgeschlagen."
+        let message = writer.error?.localizedDescription
+          ?? NSLocalizedString("video.error.startWriting", comment: "")
         DispatchQueue.main.async {
           self.warningMessage = RecorderError.writerFailed(message).localizedDescription
         }
@@ -2155,7 +2177,8 @@ extension VideoTakeRecorder {
         if writer.startWriting() {
           writer.startSession(atSourceTime: .zero)
         } else {
-          let message = writer.error?.localizedDescription ?? "startWriting fehlgeschlagen."
+          let message = writer.error?.localizedDescription
+            ?? NSLocalizedString("video.error.startWriting", comment: "")
           DispatchQueue.main.async {
             self.warningMessage = RecorderError.writerFailed(message).localizedDescription
           }

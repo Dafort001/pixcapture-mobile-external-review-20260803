@@ -60,4 +60,38 @@ struct LevelOrientationTests {
     #expect(abs(transform.normalizedRollForViewport - 1.25) < tolerance)
     #expect(abs(transform.normalizedPitchForViewport + 2.5) < tolerance)
   }
+
+  @Test("Physical landscape-left maps to mirrored UI landscape-right")
+  func physicalLandscapeLeftUsesMirroredInterfaceOrientation() {
+    #expect(
+      LevelMonitor.resolveLevelOrientation(
+        deviceOrientation: .landscapeLeft,
+        sceneOrientation: .portrait
+      ) == .landscapeRight
+    )
+  }
+
+  @Test("Physical landscape overrides a portrait-locked scene")
+  func physicalLandscapeOverridesPortraitLockedScene() {
+    let orientation = LevelMonitor.resolveLevelOrientation(
+      deviceOrientation: .landscapeRight,
+      sceneOrientation: .portrait
+    )
+    #expect(orientation == .landscapeLeft)
+    let mapped = LevelMonitor.map(
+      gravity: CMAcceleration(x: -1, y: 0, z: 0),
+      for: orientation
+    )
+    #expect(abs(mapped.roll) < tolerance)
+  }
+
+  @Test("Scene orientation is used only when physical orientation is unavailable")
+  func sceneOrientationIsFallback() {
+    #expect(
+      LevelMonitor.resolveLevelOrientation(
+        deviceOrientation: .faceUp,
+        sceneOrientation: .landscapeRight
+      ) == .landscapeRight
+    )
+  }
 }

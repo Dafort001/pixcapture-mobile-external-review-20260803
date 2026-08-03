@@ -69,32 +69,15 @@ struct CameraPreviewView: UIViewRepresentable {
     }
 
     private func currentInterfaceOrientation(for view: PreviewView?) -> UIInterfaceOrientation {
-      if let sceneOrientation = view?.window?.windowScene?.effectiveGeometry.interfaceOrientation,
-         sceneOrientation != .unknown {
-        return sceneOrientation
-      }
-
-      if let activeSceneOrientation = UIApplication.shared.connectedScenes
+      let sceneOrientation = view?.window?.windowScene?.effectiveGeometry.interfaceOrientation
+        ?? UIApplication.shared.connectedScenes
         .compactMap({ $0 as? UIWindowScene })
         .first(where: { $0.activationState == .foregroundActive })?
-        .effectiveGeometry.interfaceOrientation,
-         activeSceneOrientation != .unknown {
-        return activeSceneOrientation
-      }
-
-      switch UIDevice.current.orientation {
-      case .portrait:
-        return .portrait
-      case .portraitUpsideDown:
-        return .portraitUpsideDown
-      case .landscapeLeft:
-        // UIDevice orientation is mirrored to UI orientation.
-        return .landscapeRight
-      case .landscapeRight:
-        return .landscapeLeft
-      default:
-        return .portrait
-      }
+        .effectiveGeometry.interfaceOrientation
+      return LevelMonitor.resolveLevelOrientation(
+        deviceOrientation: UIDevice.current.orientation,
+        sceneOrientation: sceneOrientation
+      )
     }
 
     private func rotationAngle(for orientation: UIInterfaceOrientation) -> CGFloat {

@@ -1,0 +1,6 @@
+"NSCameraUsageDescription" = "PIXCAPTURE benötigt Zugriff auf die Kamera, um Belichtungsreihen und Videos aufzunehmen.";
+"NSLocalNetworkUsageDescription" = "PIXCAPTURE verbindet sich im lokalen Netzwerk mit dem Companion auf deinem Rechner, um verschlüsselte Upload-Pakete zu übertragen.";
+"NSMotionUsageDescription" = "PIXCAPTURE nutzt die Bewegungssensoren für die Nivellierung und Ausrichtung der Kamera.";
+"NSPhotoLibraryAddUsageDescription" = "PIXCAPTURE speichert Aufnahmen auf deinen Wunsch zusätzlich in der Fotos-App.";
+"NSPhotoLibraryUsageDescription" = "PIXCAPTURE benötigt Zugriff auf ausgewählte Fotos, um Aufnahmen zu sichern und zu übertragen.";
+"NSWorldSensingUsageDescription" = "PIXCAPTURE nutzt ARKit, um im Grundrissmodus Abstände zwischen gesetzten Punkten zu messen.";

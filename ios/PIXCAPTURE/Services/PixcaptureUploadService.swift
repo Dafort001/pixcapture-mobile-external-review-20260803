@@ -260,6 +260,11 @@ extension UploadProtocolMismatch {
       || reason.contains("receipt_path fehlt")
       || reason.contains("files_detailed fehlt")
       || reason.contains("Session-Mapping")
+      || reason.localizedCaseInsensitiveContains("sha256")
+      || reason.localizedCaseInsensitiveContains("prüfsumme")
+      || reason.localizedCaseInsensitiveContains("groesse")
+      || reason.localizedCaseInsensitiveContains("größe")
+      || reason.localizedCaseInsensitiveContains("unvollständig")
   }
 }
 
@@ -378,19 +383,19 @@ enum PixcaptureUploadError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .missingAuth:
-      return "Authentifizierung unvollständig."
+      return NSLocalizedString("upload.error.authIncomplete", comment: "")
     case .noPendingFiles:
-      return "Keine ausstehenden Dateien."
+      return NSLocalizedString("upload.error.noPendingFiles", comment: "")
     case .metadataPending:
-      return "Pflicht-Metadaten werden noch erstellt. Upload noch nicht freigegeben."
+      return NSLocalizedString("upload.error.metadataPending", comment: "")
     case .qrExpired:
-      return "QR neu scannen."
+      return NSLocalizedString("upload.error.qrExpired", comment: "")
     case .api(let message):
       return message
     case .apiStatus(_, let message):
       return message
     case .invalidResponse:
-      return "Ungültige Serverantwort."
+      return NSLocalizedString("upload.error.invalidServerResponse", comment: "")
     case .invalidResponseDetail(let message):
       return message
     }
@@ -437,6 +442,10 @@ func resolvePhotoUploadIndices(records: [UploadRecord]) -> [UUID: PhotoUploadInd
 }
 
 final class PixcaptureUploadService {
+  private static func localizedFormat(_ key: String, _ arguments: CVarArg...) -> String {
+    String(format: NSLocalizedString(key, comment: ""), arguments: arguments)
+  }
+
   private enum UploadTransportPolicy {
     case allowsCellular
     case wifiOnly
@@ -889,7 +898,12 @@ final class PixcaptureUploadService {
        let localCustomerCode,
        qrCustomerCode != localCustomerCode {
       throw PixcaptureUploadError.api(
-        "\(modeLabel)-QR passt nicht zu den lokalen Motiven: QR \(qrCustomerCode), lokale Motive \(localCustomerCode). Bitte im Web denselben Kunden/Job öffnen oder die App neu anmelden."
+        String(
+          format: NSLocalizedString("upload.error.customerMismatch.format", comment: ""),
+          modeLabel,
+          qrCustomerCode,
+          localCustomerCode
+        )
       )
     }
 
@@ -899,7 +913,12 @@ final class PixcaptureUploadService {
        let localJobCode,
        qrJobCode != localJobCode {
       throw PixcaptureUploadError.api(
-        "\(modeLabel)-QR passt nicht zu den lokalen Motiven: QR-Job \(qrJobCode), lokaler Job \(localJobCode). Bitte im Web denselben Job öffnen."
+        String(
+          format: NSLocalizedString("upload.error.jobMismatch.format", comment: ""),
+          modeLabel,
+          qrJobCode,
+          localJobCode
+        )
       )
     }
   }
@@ -1177,13 +1196,13 @@ final class PixcaptureUploadService {
     let sessionId = handshake.sessionId.trimmingCharacters(in: .whitespacesAndNewlines)
     let transferToken = handshake.transferToken.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !sessionId.isEmpty, !transferToken.isEmpty else {
-      throw PixcaptureUploadError.api("QR-Daten unvollständig.")
+      throw PixcaptureUploadError.api(NSLocalizedString("upload.error.qrIncomplete", comment: ""))
     }
     guard handshake.uploadMode == .localWifi else {
-      throw PixcaptureUploadError.api("QR ist nicht für WLAN-Upload.")
+      throw PixcaptureUploadError.api(NSLocalizedString("upload.error.qrWrongMode", comment: ""))
     }
     guard let expiresAt = parseIsoDate(handshake.expiresAt) else {
-      throw PixcaptureUploadError.api("QR enthält kein gültiges Ablaufdatum.")
+      throw PixcaptureUploadError.api(NSLocalizedString("upload.error.qrExpiryInvalid", comment: ""))
     }
     if expiresAt < Date() {
       throw PixcaptureUploadError.qrExpired
@@ -1193,7 +1212,7 @@ final class PixcaptureUploadService {
   private func validateWebConnectHandshake(_ handshake: WebConnectUploadHandshake) throws {
     let sessionId = handshake.webSessionId.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !sessionId.isEmpty else {
-      throw PixcaptureUploadError.api("CONNECT-QR ist unvollständig.")
+      throw PixcaptureUploadError.api(NSLocalizedString("upload.error.connectQRIncomplete", comment: ""))
     }
     if let expiresAt = handshake.expiresAt?.trimmingCharacters(in: .whitespacesAndNewlines),
        !expiresAt.isEmpty {
@@ -1207,15 +1226,15 @@ final class PixcaptureUploadService {
     if let schema = handshake.schema?.trimmingCharacters(in: .whitespacesAndNewlines),
        !schema.isEmpty,
        schema != "pixcapture.connect-qr.v2" {
-      throw PixcaptureUploadError.api("CONNECT-QR verwendet ein nicht unterstütztes Schema.")
+      throw PixcaptureUploadError.api(NSLocalizedString("upload.error.connectQRSchema", comment: ""))
     }
     if let namingVersion = handshake.namingVersion?.trimmingCharacters(in: .whitespacesAndNewlines),
        !namingVersion.isEmpty,
        namingVersion != webConnectNamingVersion {
-      throw PixcaptureUploadError.api("CONNECT-QR verwendet eine nicht unterstützte Naming-Version.")
+      throw PixcaptureUploadError.api(NSLocalizedString("upload.error.connectQRNaming", comment: ""))
     }
     if handshake.requiresViewId == true {
-      throw PixcaptureUploadError.api("Dieser CONNECT-QR verlangt view_id. Die aktuelle App-Version unterstützt das noch nicht.")
+      throw PixcaptureUploadError.api(NSLocalizedString("upload.error.connectQRViewId", comment: ""))
     }
   }
 
@@ -1566,7 +1585,7 @@ final class PixcaptureUploadService {
 
     guard let packageKey = webConnectHandshake.packageKey else {
       throw PixcaptureUploadError.api(
-        "Kabel-QR enthält noch kein kompatibles lokales Paketmaterial. Bitte Web/Receiver aktualisieren; die App stellt nach dem QR-Scan keine Online-Schlüsselanfrage mehr."
+        NSLocalizedString("upload.error.cableMaterial", comment: "")
       )
     }
     UploadDebugLog.write("[PIXUPLOAD] cablePackage sessionKey packageId=\(packageKey.packageId) keyId=\(packageKey.keyId)")
@@ -1583,7 +1602,7 @@ final class PixcaptureUploadService {
     )
 
     guard packageKey.algorithm.uppercased() == "AES-256-GCM" else {
-      throw invalidResponse("Kabel-Paketmaterial enthält einen unbekannten Schlüssel-Algorithmus.")
+      throw invalidResponse(NSLocalizedString("upload.error.cableAlgorithm", comment: ""))
     }
     guard let keyData = packageKey.keyData, keyData.count == 32 else {
       throw invalidResponse("Kabel-Paketmaterial enthält keinen gueltigen Paket-Schluessel.")
@@ -1597,7 +1616,7 @@ final class PixcaptureUploadService {
         filesTotal: 1,
         bytesSent: 0,
         bytesTotal: sourceBytes,
-        detail: "Erzeuge verschlüsseltes .pixcapturepkg."
+        detail: NSLocalizedString("upload.progress.creatingEncryptedPackage", comment: "")
       )
     )
 
@@ -1639,7 +1658,7 @@ final class PixcaptureUploadService {
         filesTotal: 1,
         bytesSent: 0,
         bytesTotal: packageSize,
-        detail: "Paket ist auf dem iPhone bereit. Der lokale PixCapture-Empfänger muss es jetzt per Kabel übernehmen.",
+        detail: NSLocalizedString("upload.progress.cablePackageReady", comment: ""),
         currentFileName: packageURL.lastPathComponent
       )
     )
@@ -1655,7 +1674,7 @@ final class PixcaptureUploadService {
         filesTotal: 1,
         bytesSent: packageSize,
         bytesTotal: packageSize,
-        detail: "Paket auf dem iPhone bereit. Nach lokalem Empfang kann das Telefon getrennt werden; der Rechner überträgt danach in den PixCapture-Speicher. Browser/Receiver bitte offen lassen.",
+        detail: NSLocalizedString("upload.progress.cableHandoffReady", comment: ""),
         currentFileName: packageFilename
       )
     )
@@ -1762,7 +1781,11 @@ final class PixcaptureUploadService {
     progress: ((PixcaptureUploadProgress) -> Void)?
   ) async throws -> PixcaptureUploadResult {
     guard let companionBaseURL = handshake.baseURL else {
-      throw PixcaptureUploadError.api("Companion-Host ist ungültig.")
+      throw PixcaptureUploadError.api(NSLocalizedString("upload.error.companionHostInvalid", comment: ""))
+    }
+    guard let pairingCode = handshake.pairingCode?.trimmingCharacters(in: .whitespacesAndNewlines),
+          !pairingCode.isEmpty else {
+      throw PixcaptureUploadError.api("Der Companion-Pairing-Code ist erforderlich.")
     }
 
     let preparedTargets = try prepareSessionTargets(jobId: jobId, records: records)
@@ -1788,7 +1811,7 @@ final class PixcaptureUploadService {
         filesTotal: 1,
         bytesSent: 0,
         bytesTotal: sourceBytes,
-        detail: "Hole Paket-Schlüssel vom Backend."
+        detail: NSLocalizedString("upload.progress.fetchingPackageKey", comment: "")
       )
     )
 
@@ -1803,7 +1826,7 @@ final class PixcaptureUploadService {
     )
 
     guard let keyData = Data(base64Encoded: keyResponse.encryption.keyBase64), keyData.count == 32 else {
-      throw invalidResponse("Backend lieferte keinen gültigen Paket-Schlüssel.")
+      throw invalidResponse(NSLocalizedString("upload.error.invalidPackageKey", comment: ""))
     }
 
     progress?(
@@ -1814,7 +1837,7 @@ final class PixcaptureUploadService {
         filesTotal: 1,
         bytesSent: 0,
         bytesTotal: sourceBytes,
-        detail: "Erzeuge verschlüsselte Daten für den lokalen Eingang."
+        detail: NSLocalizedString("upload.progress.creatingLocalData", comment: "")
       )
     )
 
@@ -1838,7 +1861,7 @@ final class PixcaptureUploadService {
         filesTotal: 1,
         bytesSent: 0,
         bytesTotal: packageSize,
-        detail: "Lokaler Eingang vorbereitet. Berechne Prüfsumme.",
+        detail: NSLocalizedString("upload.progress.calculatingChecksum", comment: ""),
         currentFileName: packageFilename
       )
     )
@@ -1851,14 +1874,14 @@ final class PixcaptureUploadService {
         filesTotal: 1,
         bytesSent: 0,
         bytesTotal: packageSize,
-        detail: "Sende verschlüsselte Daten per WLAN an den lokalen Eingang.",
+        detail: NSLocalizedString("upload.progress.sendingLocalWifi", comment: ""),
         currentFileName: packageFilename
       )
     )
 
     let receiveResponse = try await sendCompanionPackage(
       baseURL: companionBaseURL,
-      pairingCode: handshake.pairingCode,
+      pairingCode: pairingCode,
       packageURL: packageURL,
       filename: packageFilename,
       packageId: keyResponse.packageId,
@@ -1878,7 +1901,7 @@ final class PixcaptureUploadService {
         filesTotal: 1,
         bytesSent: packageSize,
         bytesTotal: packageSize,
-        detail: "Lokaler Eingang bestätigt Empfang. Schreibe Upload-Protokoll.",
+        detail: NSLocalizedString("upload.progress.localReceiptWritingLog", comment: ""),
         currentFileName: packageFilename
       )
     )
@@ -1951,7 +1974,7 @@ final class PixcaptureUploadService {
         filesTotal: 1,
         bytesSent: 0,
         bytesTotal: sourceBytes,
-        detail: "Hole Paket-Schlüssel vom Backend."
+        detail: NSLocalizedString("upload.progress.fetchingPackageKey", comment: "")
       )
     )
 
@@ -1966,7 +1989,7 @@ final class PixcaptureUploadService {
     )
 
     guard let keyData = Data(base64Encoded: keyResponse.encryption.keyBase64), keyData.count == 32 else {
-      throw invalidResponse("Backend lieferte keinen gültigen Paket-Schlüssel.")
+      throw invalidResponse(NSLocalizedString("upload.error.invalidPackageKey", comment: ""))
     }
 
     progress?(
@@ -1977,7 +2000,7 @@ final class PixcaptureUploadService {
         filesTotal: 1,
         bytesSent: 0,
         bytesTotal: sourceBytes,
-        detail: "Erzeuge verschlüsselte Daten für den lokalen Eingang dieses Rechners."
+        detail: NSLocalizedString("upload.progress.creatingBrowserData", comment: "")
       )
     )
 
@@ -2003,14 +2026,14 @@ final class PixcaptureUploadService {
         filesTotal: 1,
         bytesSent: 0,
         bytesTotal: packageSize,
-        detail: "Verbinde mit diesem Rechner.",
+        detail: NSLocalizedString("upload.progress.connectingComputer", comment: ""),
         currentFileName: packageFilename
       )
     )
 
     let bridge = BrowserCompanionWebRTCBridge()
     UploadDebugLog.write("[PIXUPLOAD] browserCompanion bridge transfer start")
-    try await bridge.transferPackage(
+    let receipt = try await bridge.transferPackage(
       endpoint: handshake.endpoint,
       webSessionId: handshake.webSessionId,
       packageURL: packageURL,
@@ -2035,13 +2058,15 @@ final class PixcaptureUploadService {
             filesTotal: 1,
             bytesSent: sent,
             bytesTotal: packageSize,
-            detail: "Sende verschlüsselte Daten an den lokalen Eingang im Browser.",
+            detail: NSLocalizedString("upload.progress.sendingBrowserData", comment: ""),
             currentFileName: packageFilename
           )
         )
       }
     )
-    UploadDebugLog.write("[PIXUPLOAD] browserCompanion bridge transfer done")
+    UploadDebugLog.write(
+      "[PIXUPLOAD] browserCompanion bridge transfer verified bytes=\(receipt.sizeBytes) sha256=\(receipt.sha256.prefix(12))..."
+    )
 
     progress?(
       makeProgress(
@@ -2051,7 +2076,7 @@ final class PixcaptureUploadService {
         filesTotal: 1,
         bytesSent: packageSize,
         bytesTotal: packageSize,
-        detail: "Browser hat die Daten im lokalen Eingang empfangen.",
+        detail: NSLocalizedString("upload.progress.browserReceiptVerified", comment: ""),
         currentFileName: packageFilename
       )
     )
@@ -2064,11 +2089,11 @@ final class PixcaptureUploadService {
       expectedFileCount: 1,
       expectedTotalBytes: packageSize,
       receivedFileCount: 1,
-      receivedTotalBytes: packageSize,
+      receivedTotalBytes: receipt.sizeBytes,
       complete: true,
       mismatches: [],
       manifestPath: nil,
-      receiptPath: "browser-companion:\(handshake.webSessionId)",
+      receiptPath: "browser-companion:\(handshake.webSessionId):\(receipt.packageId)",
       filesDetailed: nil
     )
 
@@ -2078,7 +2103,7 @@ final class PixcaptureUploadService {
       protocolLogs: [protocolLog],
       fileErrors: [],
       mode: .companionWifi,
-      filesDone: 1,
+      filesDone: receipt.sizeBytes == packageSize ? 1 : 0,
       filesTotal: 1,
       bytesSent: packageSize,
       bytesTotal: packageSize
@@ -2117,23 +2142,61 @@ final class PixcaptureUploadService {
 
     let (data, response) = try await networkSession.upload(for: request, fromFile: packageURL)
     guard let http = response as? HTTPURLResponse else {
-      throw invalidResponse("Companion lieferte keinen HTTP-Status.")
+      throw invalidResponse(NSLocalizedString("upload.error.companionNoHTTPStatus", comment: ""))
     }
-    guard (200...299).contains(http.statusCode) else {
+    guard http.statusCode == 200 else {
       let message = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
       throw PixcaptureUploadError.apiStatus(
         code: http.statusCode,
-        message: message?.isEmpty == false ? message! : "Companion-Upload fehlgeschlagen (\(http.statusCode))."
+        message: message?.isEmpty == false
+          ? message!
+          : Self.localizedFormat("upload.error.companionStatus.format", http.statusCode)
       )
     }
 
+    let receipt: CompanionPackageReceiveResponse
     do {
       let decoder = JSONDecoder()
       decoder.keyDecodingStrategy = .convertFromSnakeCase
-      return try decoder.decode(CompanionPackageReceiveResponse.self, from: data)
+      receipt = try decoder.decode(CompanionPackageReceiveResponse.self, from: data)
     } catch {
-      throw invalidResponse("Companion-Antwort konnte nicht gelesen werden: \(error.localizedDescription)")
+      throw invalidResponse(
+        Self.localizedFormat("upload.error.companionResponse.format", error.localizedDescription)
+      )
     }
+    do {
+      try CompanionPackageReceiptValidator.validate(
+        receipt,
+        expectedPackageId: packageId,
+        expectedSizeBytes: sizeBytes,
+        expectedSHA256: sha256
+      )
+    } catch let error as CompanionPackageReceiptValidationError {
+      switch error {
+      case .notAccepted:
+        throw invalidResponse(NSLocalizedString("upload.error.companionNotAccepted", comment: ""))
+      case .wrongPackageId:
+        throw invalidResponse(NSLocalizedString("upload.error.companionWrongPackageId", comment: ""))
+      case .wrongSize(let received, let expected):
+        throw invalidResponse(
+          String(
+            format: NSLocalizedString("upload.error.companionWrongSize.format", comment: ""),
+            received ?? -1,
+            expected
+          )
+        )
+      case .wrongChecksum:
+        throw invalidResponse(NSLocalizedString("upload.error.companionWrongChecksum", comment: ""))
+      case .warnings(let warnings):
+        throw invalidResponse(
+          Self.localizedFormat(
+            "upload.error.companionWarnings.format",
+            warnings.joined(separator: ", ")
+          )
+        )
+      }
+    }
+    return receipt
   }
 
   private func prepareSessionTargets(
@@ -2282,23 +2345,28 @@ final class PixcaptureUploadService {
     try writePackageChunk(envelopeData, to: handle)
 
     for target in preparedTargets {
-      let plainData = try Data(contentsOf: target.fileURL)
-      let header = PixcapturePackageEntryHeader(
-        file_id: target.fileId,
-        filename: target.filename,
-        relative_path: target.relativePath,
-        mime_type: target.mimeType,
-        size_bytes: plainData.count,
-        checksum_sha256: sha256Hex(plainData)
-      )
-      let headerData = try encoder.encode(header)
-      let sealed = try AES.GCM.seal(plainData, using: key, authenticating: headerData)
-      guard let combined = sealed.combined else {
-        throw PixcaptureUploadError.api("Paketverschluesselung konnte keinen Payload erzeugen.")
-      }
+      // CryptoKit's AES.GCM API is one-shot. Memory-map the source where iOS
+      // permits it and drain temporary objects after every entry so a DNG
+      // bracket does not retain previous plaintext/ciphertext buffers.
+      try autoreleasepool {
+        let plainData = try Data(contentsOf: target.fileURL, options: [.mappedIfSafe])
+        let header = PixcapturePackageEntryHeader(
+          file_id: target.fileId,
+          filename: target.filename,
+          relative_path: target.relativePath,
+          mime_type: target.mimeType,
+          size_bytes: plainData.count,
+          checksum_sha256: sha256Hex(plainData)
+        )
+        let headerData = try encoder.encode(header)
+        let sealed = try AES.GCM.seal(plainData, using: key, authenticating: headerData)
+        guard let combined = sealed.combined else {
+          throw PixcaptureUploadError.api("Paketverschluesselung konnte keinen Payload erzeugen.")
+        }
 
-      try writePackageChunk(headerData, to: handle)
-      try writePackageChunk(combined, to: handle)
+        try writePackageChunk(headerData, to: handle)
+        try writePackageChunk(combined, to: handle)
+      }
     }
 
     return packageURL
@@ -3222,7 +3290,7 @@ final class PixcaptureUploadService {
         filesTotal: handshake.expectedFiles ?? preparedTargets.count,
         bytesSent: 0,
         bytesTotal: handshake.totalBytesExpected ?? preparedTargets.reduce(0) { $0 + $1.sizeBytes },
-        detail: "Manifest bestätigt. Upload startet."
+        detail: NSLocalizedString("upload.progress.manifestConfirmed", comment: "")
       )
     )
 
@@ -3908,7 +3976,7 @@ final class PixcaptureUploadService {
   @discardableResult
   private func putFile(urlString: String, data: Data, mimeType: String) async throws -> HTTPURLResponse {
     guard let url = URL(string: urlString) else {
-      throw invalidResponse("Upload-URL ist ungültig.")
+      throw invalidResponse(NSLocalizedString("upload.error.invalidUploadURL", comment: ""))
     }
     var request = URLRequest(url: url)
     request.httpMethod = "PUT"
@@ -3933,7 +4001,7 @@ final class PixcaptureUploadService {
   @discardableResult
   private func putFile(urlString: String, fileURL: URL, mimeType: String) async throws -> HTTPURLResponse {
     guard let url = URL(string: urlString) else {
-      throw invalidResponse("Upload-URL ist ungültig.")
+      throw invalidResponse(NSLocalizedString("upload.error.invalidUploadURL", comment: ""))
     }
     var request = URLRequest(url: url)
     request.httpMethod = "PUT"
@@ -5238,7 +5306,7 @@ final class PixcaptureUploadService {
           code: 1,
           userInfo: [
             NSLocalizedDescriptionKey:
-              "HEIF/HEIC ist für die Bildverarbeitung gesperrt. Bitte nur JPEG- oder DNG-Aufnahmen übertragen."
+              NSLocalizedString("upload.error.heifUnsupported", comment: "")
           ]
         )
       }
@@ -5883,7 +5951,12 @@ final class PixcaptureUploadService {
     if let number = attrs[.size] as? NSNumber {
       return number.intValue
     }
-    throw PixcaptureUploadError.api("Dateigröße konnte nicht ermittelt werden: \(fileURL.lastPathComponent)")
+    throw PixcaptureUploadError.api(
+      String(
+        format: NSLocalizedString("upload.error.fileSize.format", comment: ""),
+        fileURL.lastPathComponent
+      )
+    )
   }
 
   private func uploadHTTPFailureMessage(
@@ -6735,7 +6808,7 @@ private struct PixcapturePackageEntryHeader: Encodable {
   let checksum_sha256: String
 }
 
-private struct CompanionPackageReceiveResponse: Decodable {
+nonisolated struct CompanionPackageReceiveResponse: Decodable, Sendable {
   let accepted: Bool?
   let packageId: String?
   let filename: String?
@@ -6743,6 +6816,43 @@ private struct CompanionPackageReceiveResponse: Decodable {
   let sha256: String?
   let storedPath: String?
   let warnings: [String]?
+}
+
+nonisolated enum CompanionPackageReceiptValidationError: Error, Equatable, Sendable {
+  case notAccepted
+  case wrongPackageId
+  case wrongSize(received: Int?, expected: Int)
+  case wrongChecksum
+  case warnings([String])
+}
+
+nonisolated enum CompanionPackageReceiptValidator {
+  static func validate(
+    _ receipt: CompanionPackageReceiveResponse,
+    expectedPackageId: String,
+    expectedSizeBytes: Int,
+    expectedSHA256: String
+  ) throws {
+    guard receipt.accepted == true else {
+      throw CompanionPackageReceiptValidationError.notAccepted
+    }
+    guard receipt.packageId == expectedPackageId else {
+      throw CompanionPackageReceiptValidationError.wrongPackageId
+    }
+    guard receipt.sizeBytes == expectedSizeBytes else {
+      throw CompanionPackageReceiptValidationError.wrongSize(
+        received: receipt.sizeBytes,
+        expected: expectedSizeBytes
+      )
+    }
+    guard let receivedSHA256 = receipt.sha256,
+          receivedSHA256.caseInsensitiveCompare(expectedSHA256) == .orderedSame else {
+      throw CompanionPackageReceiptValidationError.wrongChecksum
+    }
+    guard receipt.warnings?.isEmpty != false else {
+      throw CompanionPackageReceiptValidationError.warnings(receipt.warnings ?? [])
+    }
+  }
 }
 
 private struct UploadSessionPresignRequest: Encodable {

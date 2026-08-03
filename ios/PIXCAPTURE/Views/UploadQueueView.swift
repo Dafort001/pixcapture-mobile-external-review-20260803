@@ -14,7 +14,9 @@ struct UploadQueueView: View {
     self.initialConnectURL = initialConnectURL
   }
 
-  private static let cablePackageDisabledMessage = "Die Kabel-Option ist in dieser App-Version deaktiviert. Bitte nutze Direkt in die Cloud oder die WLAN-Option. Ein Kabel-Paket ist nur noch ein Support-Notfallweg und kein normaler Upload."
+  private static var cablePackageDisabledMessage: String {
+    NSLocalizedString("upload.mode.cable.disabled.help", comment: "")
+  }
 
   private enum UploadStartMode: String, CaseIterable, Identifiable, Hashable {
     case localWifi
@@ -31,37 +33,37 @@ struct UploadQueueView: View {
     var title: String {
       switch self {
       case .localWifi:
-        return "Direkt in Cloud"
+        return NSLocalizedString("upload.mode.cloud", comment: "")
       case .directR2:
-        return "Direkt ohne Portal-QR"
+        return NSLocalizedString("upload.mode.directWithoutQR", comment: "")
       case .companionWifi:
-        return "Über Rechner"
+        return NSLocalizedString("upload.mode.computer", comment: "")
       case .cablePackage:
-        return "Kabel-Option deaktiviert"
+        return NSLocalizedString("upload.mode.cable.disabled", comment: "")
       }
     }
 
     var compactTitle: String {
       switch self {
       case .localWifi:
-        return "Direkt in Cloud"
+        return NSLocalizedString("upload.mode.cloud", comment: "")
       case .directR2:
-        return "Direkt"
+        return NSLocalizedString("upload.mode.direct", comment: "")
       case .companionWifi:
-        return "Über Rechner"
+        return NSLocalizedString("upload.mode.computer", comment: "")
       case .cablePackage:
-        return "Kabel"
+        return NSLocalizedString("upload.mode.cable", comment: "")
       }
     }
 
     var subtitle: String {
       switch self {
       case .localWifi:
-        return "Nur als Ersatzweg: Das iPhone lädt selbst in den PixCapture-Speicher."
+        return NSLocalizedString("upload.mode.cloud.help", comment: "")
       case .directR2:
-        return "Ohne Portal-QR mit deinem App-Login direkt hochladen."
+        return NSLocalizedString("upload.mode.directWithoutQR.help", comment: "")
       case .companionWifi:
-        return "Telefon sendet die ausgewählten Motive zuerst lokal an diesen Rechner."
+        return NSLocalizedString("upload.mode.computer.help", comment: "")
       case .cablePackage:
         return UploadQueueView.cablePackageDisabledMessage
       }
@@ -308,7 +310,7 @@ struct UploadQueueView: View {
                   Button(role: .destructive) {
                     deleteSeries(series.id)
                   } label: {
-                    Label("Stack löschen", systemImage: "trash")
+                    Label(l10n("upload.stack.delete"), systemImage: "trash")
                   }
                 }
               }
@@ -431,13 +433,13 @@ struct UploadQueueView: View {
       } message: {
         Text(l10nFormat("upload.cleanupUploaded.message.format", uploadedCleanupPromptRecordIds.count))
       }
-      .alert("Temporäre lokale Eingangsdaten aufräumen?", isPresented: $showPackageDeletePrompt) {
+      .alert(l10n("upload.localIntake.cleanup.title"), isPresented: $showPackageDeletePrompt) {
         Button(l10n("common.cancel"), role: .cancel) {}
         Button(l10n("common.delete"), role: .destructive) {
           uploadQueue.deleteLocalPackageExports()
         }
       } message: {
-        Text("Temporäre lokale Eingangsdaten werden vom iPhone entfernt. Bereits in der Cloud vorhandene Aufnahmen bleiben im PixCapture-Speicher.")
+        Text(l10n("upload.localIntake.cleanup.message"))
       }
       .alert(
         "Support-Diagnose kopiert",
@@ -467,22 +469,24 @@ struct UploadQueueView: View {
                   webConnectError = nil
                   showQRScanner = true
                 } label: {
-                  Label("Upload-QR auf der Webseite scannen", systemImage: "qrcode.viewfinder")
+                  Label(l10n("upload.connect.scanWebsiteQR"), systemImage: "qrcode.viewfinder")
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .accessibilityIdentifier("upload.connect.scanQR.companion")
 
-                Text("Auf der PixCapture-Webseite „Über Rechner“ wählen und den dort angezeigten Upload-QR scannen.")
+                Text(l10n("upload.connect.computer.instructions"))
                   .font(.caption)
                   .foregroundStyle(.secondary)
 
                 if let payload = parsedWebConnectPayload {
                   payloadStatusCard(
-                    title: payload.companionTransport == "browser_webrtc" ? "Mit dem Rechner verbunden" : "Falscher QR-Code",
+                    title: payload.companionTransport == "browser_webrtc"
+                      ? l10n("upload.connect.computer.connected")
+                      : l10n("upload.connect.wrongQR"),
                     subtitle: payload.companionTransport == "browser_webrtc"
-                      ? "Die Übertragung ist bereit. Tippe unten auf „An Rechner übertragen“."
-                      : "Bitte am Rechner die WLAN-Übertragung öffnen und den dort angezeigten QR-Code scannen.",
+                      ? l10n("upload.connect.computer.ready")
+                      : l10n("upload.connect.computer.wrongQR.help"),
                     lines: [
                       "Session: \(payload.webSessionId)",
                       "Transport: \(payload.companionTransport ?? "-")"
@@ -497,7 +501,7 @@ struct UploadQueueView: View {
                   webConnectError = nil
                   showQRScanner = true
                 } label: {
-                  Label("Upload-QR auf der Webseite scannen", systemImage: "qrcode.viewfinder")
+                  Label(l10n("upload.connect.scanWebsiteQR"), systemImage: "qrcode.viewfinder")
                 }
                 .buttonStyle(.borderedProminent)
 
@@ -512,19 +516,19 @@ struct UploadQueueView: View {
                   .textFieldStyle(.roundedBorder)
                   .accessibilityIdentifier("upload.connect.localWifi.input")
 
-                Text("Auf der PixCapture-Webseite „Direkt in Cloud“ wählen und den dort angezeigten Upload-QR scannen.")
+                Text(l10n("upload.connect.cloud.instructions"))
                   .font(.caption)
                   .foregroundStyle(.secondary)
 
                 if let payload = parsedWebConnectPayload {
                   let authReady = authService.effectiveAccessToken != nil
                   payloadStatusCard(
-                    title: "Web-Connect erkannt",
+                    title: l10n("upload.connect.webDetected"),
                     subtitle: authReady
                       ? (payload.requiresViewId == true
-                          ? "CONNECT-QR erkannt, aber diese Session verlangt view_id. Bitte erst die App aktualisieren."
-                          : "Session verbunden. Der Button unten startet den Upload und wartet danach auf die Serverbestätigung.")
-                      : "CONNECT-QR erkannt. Fuer Web-Connect bitte zusaetzlich anmelden oder einen Pairing-Token setzen.",
+                          ? l10n("upload.connect.viewIdUnsupported")
+                          : l10n("upload.connect.sessionReady"))
+                      : l10n("upload.connect.additionalLoginRequired"),
                     lines: [
                       "Session: \(payload.webSessionId)",
                       "Endpoint: \(payload.endpoint.absoluteString)",
@@ -538,8 +542,8 @@ struct UploadQueueView: View {
                   )
                 } else if let payload = parsedLocalWiFiPayload {
                   payloadStatusCard(
-                    title: "LOCAL_WIFI erkannt",
-                    subtitle: "Die lokale Transfer-Session ist bereit. Kein Login oder Pairing-Token noetig.",
+                    title: l10n("upload.connect.localWifiDetected"),
+                    subtitle: l10n("upload.connect.localWifiReady"),
                     lines: [
                       "Session: \(payload.sessionId)",
                       "Ablauf: \(payload.expiresAt)",
@@ -564,10 +568,10 @@ struct UploadQueueView: View {
                 }
                 .buttonStyle(.bordered)
 
-                  Text("Direkt ohne Portal-QR nutzt deine Anmeldung. Ein Pairing-Link ist nur noetig, wenn du nicht eingeloggt bist.")
+                  Text(l10n("upload.connect.direct.help"))
                   .font(.caption)
                   .foregroundStyle(.secondary)
-                TextField("Pairing-Link oder Token", text: $webConnectInput)
+                TextField(l10n("upload.connect.pairingPlaceholder"), text: $webConnectInput)
                   .textInputAutocapitalization(.never)
                   .autocorrectionDisabled()
                   .submitLabel(.done)
@@ -578,29 +582,29 @@ struct UploadQueueView: View {
                   .textFieldStyle(.roundedBorder)
                 if authService.mobileConnectToken != nil {
                   payloadStatusCard(
-                    title: "Pairing aktiv",
-                    subtitle: "Der Mobile-Direct-Token ist gespeichert und kann sofort verwendet werden.",
+                    title: l10n("upload.connect.pairingActive"),
+                    subtitle: l10n("upload.connect.pairingActive.help"),
                     lines: [],
                     tint: Color.green
                   )
                 } else if parsedMobileConnectToken != nil {
                   payloadStatusCard(
-                    title: "Pairing-Token erkannt",
-                    subtitle: "Der Token wird beim Start des direkten Uploads gespeichert.",
+                    title: l10n("upload.connect.pairingDetected"),
+                    subtitle: l10n("upload.connect.pairingDetected.help"),
                     lines: [],
                     tint: Color.green
                   )
                 } else {
                   payloadStatusCard(
-                    title: "Noch kein Pairing erkannt",
-                    subtitle: "Wenn du eingeloggt bist, kannst du direkt starten. Sonst Token oder Pairing-Link einfuegen.",
+                    title: l10n("upload.connect.noPairing"),
+                    subtitle: l10n("upload.connect.noPairing.help"),
                     lines: [],
                     tint: authService.effectiveAccessToken != nil ? Color.green : Color.orange
                   )
                 }
               } else if uploadModeSelection == .cablePackage {
                 payloadStatusCard(
-                  title: "Kabel-Option deaktiviert",
+                  title: l10n("upload.mode.cable.disabled"),
                   subtitle: Self.cablePackageDisabledMessage,
                   lines: parsedWebConnectPayload.map {
                     [
@@ -700,8 +704,8 @@ struct UploadQueueView: View {
                 .aspectRatio(1, contentMode: .fit)
 
                 payloadStatusCard(
-                  title: "Was hier erkannt wird",
-                  subtitle: "Upload-QR, lokaler Transfer-QR oder Session-Link. Nach dem Scan erscheint die Verbindungsbestaetigung direkt im vorherigen Fenster.",
+                  title: l10n("upload.scanner.recognized.title"),
+                  subtitle: l10n("upload.scanner.recognized.help"),
                   lines: [],
                   tint: Color.blue
                 )
@@ -709,7 +713,7 @@ struct UploadQueueView: View {
                 Spacer(minLength: 0)
               }
               .padding(20)
-              .navigationTitle("QR-Scanner")
+              .navigationTitle(l10n("upload.scanner.title"))
               .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                   Button(l10n("common.close")) {
@@ -776,7 +780,14 @@ struct UploadQueueView: View {
 
   private var uploadMethodSelector: some View {
     VStack(alignment: .leading, spacing: 10) {
-      Text("Wie möchtest du übertragen?")
+      Label(
+        l10n("upload.foreground.requirement"),
+        systemImage: "iphone.and.arrow.forward"
+      )
+      .font(.caption)
+      .foregroundStyle(.secondary)
+
+          Text(l10n("upload.method.question"))
         .font(.caption.weight(.semibold))
         .foregroundStyle(.secondary)
 
@@ -800,13 +811,13 @@ struct UploadQueueView: View {
   private var selectedUploadModeExplanation: String {
     switch uploadModeSelection {
     case .companionWifi:
-      return "iPhone → per WLAN zum Rechner → anschließend vom Rechner in die Cloud."
+      return l10n("upload.method.computer.path")
     case .localWifi:
       return settings.allowCellularUpload
-        ? "iPhone → direkt in die Cloud. WLAN wird bevorzugt; ohne WLAN dürfen mobile Daten verwendet werden."
-        : "iPhone → direkt in die Cloud. Nur über WLAN; mobile Daten sind ausgeschaltet."
+        ? l10n("upload.method.cloud.cellularAllowed")
+        : l10n("upload.method.cloud.wifiOnly")
     case .directR2:
-      return "iPhone → direkt in die Cloud."
+      return l10n("upload.method.cloud.direct")
     case .cablePackage:
       return Self.cablePackageDisabledMessage
     }
@@ -839,11 +850,15 @@ struct UploadQueueView: View {
   private var uploadConnectPrimaryTitle: String {
     switch uploadModeSelection {
     case .cablePackage:
-      return "Kabel-Option deaktiviert"
+      return l10n("upload.mode.cable.disabled")
     case .companionWifi:
-      return canConfirmUploadConnection ? "An Rechner übertragen" : "Zuerst Upload-QR scannen"
+      return canConfirmUploadConnection
+        ? l10n("upload.connect.transferToComputer")
+        : l10n("upload.connect.scanQRFirst")
     case .localWifi:
-      return canConfirmUploadConnection ? "Direkt-Upload starten" : "Zuerst Upload-QR scannen"
+      return canConfirmUploadConnection
+        ? l10n("upload.connect.startDirect")
+        : l10n("upload.connect.scanQRFirst")
     case .directR2:
       return l10n("upload.start")
     }
@@ -864,16 +879,16 @@ struct UploadQueueView: View {
 
   private var uploadMethodDetails: some View {
     let preflight = companionPackagePreflight
-    let title = "Übertragung über den Rechner"
+    let title = l10n("upload.method.computer.title")
     let subtitle = preflight.hasFiles
-      ? "Das iPhone sendet die ausgewählten Motive an den lokalen Eingang dieses Rechners. Danach überträgt der Browser sie in den PixCapture-Speicher."
-      : "Noch keine paketfähigen lokalen Dateien gefunden."
+      ? l10n("upload.method.computer.subtitle")
+      : l10n("upload.method.computer.noFiles")
     let lines = companionPackageSummaryLines(preflight) + [
-      "1. PixCapture am Rechner öffnen.",
-      "2. „Über Rechner“ wählen und QR-Code anzeigen.",
-      "3. QR-Code mit dem iPhone scannen.",
-      "4. Auf „An Rechner übertragen“ tippen.",
-      "5. Browser geöffnet lassen, bis der Upload abgeschlossen ist."
+      l10n("upload.method.computer.step1"),
+      l10n("upload.method.computer.step2"),
+      l10n("upload.method.computer.step3"),
+      l10n("upload.method.computer.step4"),
+      l10n("upload.method.computer.step5")
     ]
 
     return DisclosureGroup(isExpanded: $showUploadMethodDetails) {
@@ -885,7 +900,7 @@ struct UploadQueueView: View {
       )
       .padding(.top, 8)
     } label: {
-      Label("So funktioniert die Übertragung", systemImage: "info.circle")
+      Label(l10n("upload.method.howItWorks"), systemImage: "info.circle")
         .font(.caption.weight(.semibold))
     }
     .tint(Color.secondary)
@@ -998,7 +1013,7 @@ struct UploadQueueView: View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
           Image(systemName: "externaldrive.badge.exclamationmark")
             .foregroundStyle(Color.orange)
-          Text("Lokaler Eingang wartet")
+          Text(l10n("upload.localIntake.waiting"))
             .font(.system(size: 14, weight: .semibold))
           Spacer(minLength: 0)
           Text(size)
@@ -1006,7 +1021,7 @@ struct UploadQueueView: View {
             .foregroundStyle(.secondary)
         }
 
-        Text("Auf diesem iPhone liegen noch temporäre lokale Eingangsdaten. Nach lokalem Empfang überträgt der Rechner die auf dem Telefon ausgewählten Motive in den PixCapture-Speicher.")
+        Text(l10n("upload.localIntake.waiting.help"))
           .font(.caption)
           .foregroundStyle(.secondary)
           .fixedSize(horizontal: false, vertical: true)
@@ -1015,7 +1030,7 @@ struct UploadQueueView: View {
           Button {
             uploadQueue.refreshLocalPackageInventory()
           } label: {
-            Label("Status prüfen", systemImage: "arrow.clockwise")
+            Label(l10n("upload.localIntake.checkStatus"), systemImage: "arrow.clockwise")
               .frame(maxWidth: .infinity)
           }
           .buttonStyle(.bordered)
@@ -1023,7 +1038,7 @@ struct UploadQueueView: View {
           Button(role: .destructive) {
             showPackageDeletePrompt = true
           } label: {
-            Label("Aufräumen", systemImage: "trash")
+            Label(l10n("upload.localIntake.cleanup"), systemImage: "trash")
               .frame(maxWidth: .infinity)
           }
           .buttonStyle(.bordered)
@@ -1052,7 +1067,7 @@ struct UploadQueueView: View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
           Image(systemName: "arrow.up.doc.fill")
             .foregroundStyle(Color.blue)
-          Text("Lokaler Eingang bereit")
+          Text(l10n("upload.localIntake.ready"))
             .font(.system(size: 14, weight: .semibold))
           Spacer(minLength: 0)
           Text(size)
@@ -1060,12 +1075,12 @@ struct UploadQueueView: View {
             .foregroundStyle(.secondary)
         }
 
-        Text("Die ausgewählten Motive sind für den lokalen Eingang dieses Rechners vorbereitet. Sobald der Empfänger sie lokal gespeichert hat, überträgt der Rechner diese Daten in den PixCapture-Speicher.")
+        Text(l10n("upload.localIntake.ready.help"))
           .font(.caption)
           .foregroundStyle(.secondary)
           .fixedSize(horizontal: false, vertical: true)
 
-        Label("Status: lokaler Eingang / Speicherupload", systemImage: "display")
+        Label(l10n("upload.localIntake.status"), systemImage: "display")
           .font(.system(size: 14, weight: .semibold))
           .foregroundStyle(Color.blue)
           .frame(maxWidth: .infinity, alignment: .leading)
@@ -1093,21 +1108,21 @@ struct UploadQueueView: View {
 
   private func localSafetyMessage(for diagnostics: LocalCaptureStorageDiagnostics) -> String {
     if diagnostics.queueRecordCount == 0 && diagnostics.localFileCount == 0 {
-      return "Keine lokalen Aufnahmen in der App."
+      return l10n("upload.safety.empty")
     }
     if diagnostics.queueRecordCount == 0 && diagnostics.localFileCount > 0 {
-      return "Die Upload-Liste ist leer, aber im lokalen Capture-Speicher liegen noch technische Dateien. Die Dateitypen unten zeigen, ob es Originale, Previews, XMP- oder JSON-Dateien sind. Die Support-Dateiliste benennt jede Datei einzeln."
+      return l10n("upload.safety.filesWithoutQueue")
     }
     if diagnostics.orphanFiles > 0 {
-      return "Aufnahmen bleiben lokal gesichert. Einige Altdateien sind keiner Galerie-Liste zugeordnet und koennen bei Bedarf als Support-Dateiliste gesichert werden."
+      return l10n("upload.safety.orphans")
     }
     if diagnostics.failedRecords > 0 {
-      return "Aufnahmen bleiben lokal gesichert. Fehlgeschlagene Uploads koennen erneut gestartet werden."
+      return l10n("upload.safety.failed")
     }
     if diagnostics.pendingRecords > 0 {
-      return "Aufnahmen sind lokal gesichert und warten auf den Upload."
+      return l10n("upload.safety.pending")
     }
-    return "Alle bekannten Aufnahmen sind serverseitig bestaetigt. Lokale Kopien bleiben erhalten, bis sie bewusst geloescht werden."
+    return l10n("upload.safety.confirmed")
   }
 
   private func localFileKindPills(for diagnostics: LocalCaptureStorageDiagnostics) -> [String] {
@@ -1169,17 +1184,17 @@ struct UploadQueueView: View {
 
   private var companionConnectionFields: some View {
     VStack(alignment: .leading, spacing: 10) {
-      Text("Companion-Ziel")
+      Text(l10n("upload.companion.destination"))
         .font(.subheadline.weight(.semibold))
 
-      TextField("Host oder IP, z. B. 192.168.178.25", text: $settings.companionHost)
+      TextField(l10n("upload.companion.host.placeholder"), text: $settings.companionHost)
         .textInputAutocapitalization(.never)
         .autocorrectionDisabled()
         .font(.callout.monospaced())
         .textFieldStyle(.roundedBorder)
 
       HStack(spacing: 10) {
-        TextField("Port", text: companionPortBinding)
+        TextField(l10n("upload.companion.port"), text: companionPortBinding)
           .keyboardType(.numberPad)
           .font(.callout.monospaced())
           .textFieldStyle(.roundedBorder)
@@ -1189,11 +1204,15 @@ struct UploadQueueView: View {
           .font(.caption)
       }
 
-      SecureField("Pairing-Code (optional)", text: $settings.companionPairingCode)
+      SecureField(l10n("upload.companion.pairing.required"), text: $settings.companionPairingCode)
         .textInputAutocapitalization(.never)
         .autocorrectionDisabled()
         .font(.callout.monospaced())
-        .textFieldStyle(.roundedBorder)
+      .textFieldStyle(.roundedBorder)
+
+      Text(l10n("upload.companion.pairing.help"))
+        .font(.caption2)
+        .foregroundStyle(.secondary)
 
       HStack(spacing: 10) {
         Button {
@@ -1201,12 +1220,12 @@ struct UploadQueueView: View {
             await companionTransfer.testConnection(using: settings)
           }
         } label: {
-          Label("Verbindung testen", systemImage: "network")
+          Label(l10n("upload.companion.test"), systemImage: "network")
         }
         .buttonStyle(.bordered)
 
         if companionTransfer.isConnected {
-          Label("bereit", systemImage: "checkmark.circle.fill")
+          Label(l10n("upload.companion.ready"), systemImage: "checkmark.circle.fill")
             .font(.caption.weight(.semibold))
             .foregroundStyle(Color.green)
         }
@@ -1240,12 +1259,13 @@ struct UploadQueueView: View {
 
   private func companionWiFiHandshakeFromSettings() -> CompanionWiFiUploadHandshake? {
     let host = settings.companionHost.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !host.isEmpty else { return nil }
+    let pairingCode = settings.companionPairingCode.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !host.isEmpty, !pairingCode.isEmpty else { return nil }
     return CompanionWiFiUploadHandshake(
       host: host,
       port: settings.companionPort,
       useHTTPS: settings.companionUseHTTPS,
-      pairingCode: settings.companionPairingCode
+      pairingCode: pairingCode
     )
   }
 
@@ -1294,14 +1314,16 @@ struct UploadQueueView: View {
     UploadDebugLog.reset()
     guard !uploadCandidates.isEmpty else {
       if uploadQueue.localRecoveryFileCount > 0 {
-        uploadQueue.setUploadMessage("\(uploadQueue.localRecoveryFileCount) lokale Altdateien gefunden, aber keine Upload-Liste geladen. Bitte in der Galerie die Dateiliste sichern oder Altdateien löschen.")
+        uploadQueue.setUploadMessage(
+          l10nFormat("upload.localFilesWithoutQueue.format", uploadQueue.localRecoveryFileCount)
+        )
       } else {
-        uploadQueue.setUploadMessage("Keine ausstehenden Uploads.")
+        uploadQueue.setUploadMessage(l10n("upload.noPending"))
       }
       return
     }
     guard !uploadReadyCandidates.isEmpty else {
-      uploadQueue.setUploadMessage("Aufnahmen sind schon in der Galerie, aber noch nicht uploadbereit. Pflicht-Metadaten werden noch erstellt.")
+      uploadQueue.setUploadMessage(l10n("upload.metadataPreparing"))
       return
     }
 
@@ -1384,13 +1406,13 @@ struct UploadQueueView: View {
       return
     case .companionWifi:
       guard let payload = parsedWebConnectPayload else {
-        webConnectError = "Bitte die WLAN-Option auf der Webseite starten und den QR scannen."
+        webConnectError = l10n("upload.connect.startComputerOnWeb")
         return
       }
       UploadDebugLog.write("[PIXUPLOAD] parsedWebConnect session=\(payload.webSessionId) transport=\(payload.companionTransport ?? "-") endpoint=\(payload.endpoint.absoluteString)")
       guard payload.companionTransport == "browser_webrtc" else {
         UploadDebugLog.write("[PIXUPLOAD] reject companion: wrong transport=\(payload.companionTransport ?? "-")")
-        webConnectError = "Bitte auf der Webseite die WLAN-Option starten und diesen QR scannen."
+        webConnectError = l10n("upload.connect.wrongComputerTransport")
         return
       }
       guard canStartUpload(connection: .browserCompanion(payload)) else {
@@ -1451,7 +1473,7 @@ struct UploadQueueView: View {
           UploadDebugLog.write("[PIXUPLOAD] startUploadAsync rejected: inbox unavailable message=\(authService.lastError ?? "-")")
           uploadQueue.setUploadMessage(
             authService.lastError
-              ?? "Sammelcontainer konnte nicht vorbereitet werden. Bitte Jobs aufraeumen oder spaeter erneut versuchen."
+              ?? l10n("upload.inbox.preparationFailed")
           )
           return
         }
@@ -1477,12 +1499,12 @@ struct UploadQueueView: View {
     UploadDebugLog.write("[PIXUPLOAD] startUploadAsync pending=\(pending.count) skipped=\(skippedCount) metadataPending=\(metadataPendingCount) mode=\(connection.mode.rawValue)")
     guard !pending.isEmpty else {
       if metadataPendingCount > 0 {
-        uploadQueue.setUploadMessage("Keine uploadfähigen Motive: Pflicht-Metadaten werden noch erstellt oder fehlen.")
+        uploadQueue.setUploadMessage(l10n("upload.noEligible.metadata"))
       } else {
         uploadQueue.setUploadMessage(
           allowsUnassigned
-            ? "Keine uploadfähigen Motive gefunden."
-            : "Keine uploadfähigen Motive: Bitte zuerst in der Galerie einen Job zuweisen."
+            ? l10n("upload.noEligible")
+            : l10n("upload.noEligible.assignJob")
         )
       }
       return
@@ -1591,17 +1613,17 @@ struct UploadQueueView: View {
   private func missingUploadAuthMessage(for connection: PixcaptureUploadConnection) -> String {
     switch connection {
     case .webConnect:
-      return "CONNECT-QR erkannt, aber Web-Connect braucht zusaetzlich Anmeldung oder einen Pairing-Token."
+      return l10n("upload.auth.webConnect")
     case .directR2:
-      return "Bitte zuerst mit E-Mail und Passwort oder mit einem Anmelde-QR anmelden."
+      return l10n("upload.auth.direct")
     case .cablePackage:
       return Self.cablePackageDisabledMessage
     case .companionWiFi:
-      return "Bitte zuerst anmelden. Die WLAN-Option braucht einen Paket-Schluessel vom Backend."
+      return l10n("upload.auth.computer")
     case .browserCompanion:
-      return "Bitte zuerst anmelden. Die WLAN-Option braucht einen Paket-Schluessel vom Backend."
+      return l10n("upload.auth.computer")
     case .localWiFi:
-      return "LOCAL_WIFI-QR ist unvollstaendig oder abgelaufen."
+      return l10n("upload.auth.localWifiInvalid")
     }
   }
 
@@ -2171,35 +2193,35 @@ struct UploadQueueView: View {
       switch progress.phase {
       case .preparing:
         return progress.mode == .companionWifi
-          ? "WLAN-Eingang wird lokal verschlüsselt\(dots)"
-          : "Kabel-Eingang wird lokal verschlüsselt\(dots)"
+          ? l10n("upload.activity.wifiEncrypting") + dots
+          : l10n("upload.activity.cableEncrypting") + dots
       case .connecting:
         return "Backend wird kontaktiert\(dots)"
       case .uploading:
         return progress.mode == .companionWifi
-          ? "WLAN-Transfer läuft weiter\(dots)"
-          : "Kabeldaten werden für den lokalen Eingang vorbereitet\(dots)"
+          ? l10n("upload.activity.wifiTransfer") + dots
+          : l10n("upload.activity.cablePreparing") + dots
       case .finalizing:
         return progress.mode == .companionWifi
-          ? "Lokaler Eingang bestätigt Empfang\(dots)"
-          : "Warte auf lokalen Eingang\(dots)"
+          ? l10n("upload.activity.localReceipt") + dots
+          : l10n("upload.activity.waitingLocal") + dots
       case .waitingForApproval:
-        return "Warte auf Speicherupload\(dots)"
+        return l10n("upload.activity.waitingStorage") + dots
       case .completed, .failed:
         return ""
       }
     default:
       switch progress.phase {
       case .preparing:
-        return "Upload wird vorbereitet\(dots)"
+        return l10n("upload.activity.preparing") + dots
       case .connecting:
-        return "Verbindung wird aufgebaut\(dots)"
+        return l10n("upload.activity.connecting") + dots
       case .waitingForApproval:
-        return "Warte auf Serverbestätigung\(dots)"
+        return l10n("upload.activity.waitingServer") + dots
       case .uploading:
-        return "Upload läuft\(dots)"
+        return l10n("upload.activity.running") + dots
       case .finalizing:
-        return "Server finalisiert\(dots)"
+        return l10n("upload.activity.finalizing") + dots
       case .completed, .failed:
         return ""
       }
@@ -2220,14 +2242,19 @@ struct UploadQueueView: View {
 
   private func uploadMotifProgressText(for progress: PixcaptureUploadProgress) -> String {
     let motifCount = uploadStatusMotifCount
-    let motifLabel = motifCount == 1 ? "Motiv" : "Motive"
     switch progress.phase {
     case .completed:
-      return motifCount > 0 ? "\(motifCount) \(motifLabel) uebertragen" : "Upload abgeschlossen"
+      return motifCount > 0
+        ? l10nFormat("upload.progress.transferred.format", motifCount)
+        : l10n("upload.progress.completed")
     case .failed:
-      return motifCount > 0 ? "\(motifCount) \(motifLabel) betroffen" : "Upload pruefen"
+      return motifCount > 0
+        ? l10nFormat("upload.progress.affected.format", motifCount)
+        : l10n("upload.progress.check")
     default:
-      return motifCount > 0 ? "\(motifCount) \(motifLabel)" : "Motive werden uebertragen"
+      return motifCount > 0
+        ? l10nFormat("upload.progress.motifs.format", motifCount)
+        : l10n("upload.progress.transferring")
     }
   }
 
@@ -2241,12 +2268,12 @@ struct UploadQueueView: View {
     case .uploading:
       switch progress.mode {
       case .cablePackage, .companionWifi:
-        return "Motive und technische Begleitdaten werden fuer den lokalen Eingang vorbereitet."
+        return l10n("upload.progress.localPreparing")
       default:
-        return "Motive und technische Begleitdaten werden uebertragen."
+        return l10n("upload.progress.transferringDetails")
       }
     case .finalizing:
-      return "Der Server prueft den Upload und ordnet die Motive dem Auftrag zu."
+      return l10n("upload.progress.serverFinalizing")
     case .completed, .failed:
       return progress.detail ?? uploadMessage
     }
@@ -2255,17 +2282,17 @@ struct UploadQueueView: View {
   private func initialProgressDetail(for connection: PixcaptureUploadConnection) -> String {
     switch connection {
     case .webConnect:
-      return "QR-Code erkannt. Verbinde App und Browser-Session."
+      return l10n("upload.progress.webConnect")
     case .localWiFi:
-      return "QR-Code erkannt. Pruefe lokale Transfer-Verbindung."
+      return l10n("upload.progress.localWifi")
     case .directR2:
-      return "Pairing erkannt. Bereite Direct-Upload vor."
+      return l10n("upload.progress.direct")
     case .cablePackage:
-      return "Bereite verschluesselte Daten fuer den lokalen Eingang vor."
+      return l10n("upload.progress.encrypting")
     case .companionWiFi:
-      return "Bereite verschluesselte Daten fuer den lokalen Eingang vor."
+      return l10n("upload.progress.encrypting")
     case .browserCompanion:
-      return "Bereite Verbindung zum lokalen Eingang dieses Rechners vor."
+      return l10n("upload.progress.browserCompanion")
     }
   }
 
@@ -3000,38 +3027,38 @@ private final class WebConnectQRScannerController: UIViewController, AVCaptureMe
           if granted {
             self.setupSession()
           } else {
-            self.emitError("Kamerazugriff wurde nicht erlaubt.")
+            self.emitError(NSLocalizedString("scanner.error.permissionNotGranted", comment: ""))
           }
         }
       }
     case .denied, .restricted:
-      emitError("Kein Kamerazugriff. Bitte in den iOS-Einstellungen aktivieren.")
+      emitError(NSLocalizedString("scanner.error.permissionDenied", comment: ""))
     @unknown default:
-      emitError("Kamera konnte nicht initialisiert werden.")
+      emitError(NSLocalizedString("scanner.error.cameraInitialization", comment: ""))
     }
   }
 
   private func setupSession() {
     guard let videoDevice = AVCaptureDevice.default(for: .video) else {
-      emitError("Keine Kamera gefunden.")
+      emitError(NSLocalizedString("scanner.error.noCamera", comment: ""))
       return
     }
 
     do {
       let input = try AVCaptureDeviceInput(device: videoDevice)
       guard session.canAddInput(input) else {
-        emitError("Kamera-Input konnte nicht hinzugefügt werden.")
+        emitError(NSLocalizedString("scanner.error.cameraInputUnavailable", comment: ""))
         return
       }
       session.addInput(input)
     } catch {
-      emitError("Kamera-Input fehlgeschlagen.")
+      emitError(NSLocalizedString("scanner.error.cameraInputFailed", comment: ""))
       return
     }
 
     let output = AVCaptureMetadataOutput()
     guard session.canAddOutput(output) else {
-      emitError("Scanner-Output konnte nicht hinzugefügt werden.")
+      emitError(NSLocalizedString("scanner.error.outputUnavailable", comment: ""))
       return
     }
     session.addOutput(output)

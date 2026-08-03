@@ -36,6 +36,7 @@ final class LevelMonitor {
   private let warningThreshold = 0.52
   private let minimumStableDuration: TimeInterval = 0.42
   private var isRunning = false
+  private var lastResolvedOrientation: UIInterfaceOrientation = .portrait
 
   init() {}
 
@@ -44,10 +45,14 @@ final class LevelMonitor {
     guard motionManager.isDeviceMotionAvailable else { return }
     isRunning = true
     UIDevice.current.beginGeneratingDeviceOrientationNotifications()
+    lastResolvedOrientation = Self.resolveLevelOrientation(
+      deviceOrientation: UIDevice.current.orientation,
+      sceneOrientation: Self.preferredForegroundWindowScene()?.effectiveGeometry.interfaceOrientation
+    )
     motionManager.deviceMotionUpdateInterval = 1.0 / 30.0
     motionManager.startDeviceMotionUpdates(to: .main) { [weak self] motion, _ in
-      guard let motion else { return }
-      let orientation = Self.currentInterfaceOrientation()
+      guard let self, let motion else { return }
+      let orientation = self.resolveCurrentOrientation()
       let mapped = Self.map(gravity: motion.gravity, for: orientation)
       let gyroMagnitude = Self.magnitude(
         x: motion.rotationRate.x,
@@ -59,7 +64,7 @@ final class LevelMonitor {
         y: motion.userAcceleration.y,
         z: motion.userAcceleration.z
       )
-      self?.emitSample(
+      self.emitSample(
         roll: mapped.roll,
         pitch: mapped.pitch,
         gyroMagnitude: gyroMagnitude,
@@ -186,32 +191,42 @@ final class LevelMonitor {
     sqrt((x * x) + (y * y) + (z * z))
   }
 
-  private static func currentInterfaceOrientation() -> UIInterfaceOrientation {
-    // Level values are expressed in the currently rendered viewport's axes.
-    // Once landscape is supported, the scene orientation is the authoritative
-    // coordinate system and avoids stale UIDevice values during rotation.
-    if let scene = preferredForegroundWindowScene() {
-      let orientation = scene.effectiveGeometry.interfaceOrientation
-      if orientation != .unknown {
-        return orientation
-      }
+  private func resolveCurrentOrientation() -> UIInterfaceOrientation {
+    let deviceOrientation = UIDevice.current.orientation
+    switch deviceOrientation {
+    case .portrait, .portraitUpsideDown, .landscapeLeft, .landscapeRight:
+      lastResolvedOrientation = Self.resolveLevelOrientation(
+        deviceOrientation: deviceOrientation,
+        sceneOrientation: nil
+      )
+    default:
+      break
     }
+    return lastResolvedOrientation
+  }
 
-    // Physical orientation is only a fallback while no foreground scene is
-    // available yet.
-    switch UIDevice.current.orientation {
+  static func resolveLevelOrientation(
+    deviceOrientation: UIDeviceOrientation,
+    sceneOrientation: UIInterfaceOrientation?
+  ) -> UIInterfaceOrientation {
+    // Leveling follows the physical camera viewport even when orientation lock
+    // keeps the surrounding SwiftUI scene in portrait. UIDevice and UI
+    // landscape names are mirrored, so convert them explicitly.
+    switch deviceOrientation {
     case .portrait:
       return .portrait
     case .portraitUpsideDown:
       return .portraitUpsideDown
     case .landscapeLeft:
-      return .landscapeLeft
-    case .landscapeRight:
       return .landscapeRight
+    case .landscapeRight:
+      return .landscapeLeft
     default:
       break
     }
-
+    if let sceneOrientation, sceneOrientation != .unknown {
+      return sceneOrientation
+    }
     return .portrait
   }
 

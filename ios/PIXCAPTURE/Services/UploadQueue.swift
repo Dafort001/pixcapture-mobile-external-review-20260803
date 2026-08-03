@@ -186,6 +186,14 @@ private struct ManagedStackUploadSummary {
 
 @MainActor
 final class UploadQueue: ObservableObject {
+  private static func localized(_ key: String) -> String {
+    NSLocalizedString(key, comment: "")
+  }
+
+  private static func localizedFormat(_ key: String, _ arguments: CVarArg...) -> String {
+    String(format: localized(key), arguments: arguments)
+  }
+
   static let uploadedRetentionDays = 7
   private static let uploadedRetentionInterval: TimeInterval = TimeInterval(uploadedRetentionDays * 24 * 60 * 60)
   private static let diagnosticsCleanupVersion = 1
@@ -269,7 +277,7 @@ final class UploadQueue: ObservableObject {
     refreshLocalPackageInventory()
     if records.isEmpty && localRecoveryFileCount > 0 {
       setLatestNotice(
-        message: "\(localRecoveryFileCount) lokale Capture-Dateien gefunden, aber keine Upload-Liste geladen. Bitte erst Recovery/Export pruefen.",
+        message: Self.localizedFormat("upload.queue.localFilesWithoutQueue.format", localRecoveryFileCount),
         kind: .warning
       )
     }
@@ -498,7 +506,7 @@ final class UploadQueue: ObservableObject {
   ) {
     guard !isUploading else { return }
     guard !pending.isEmpty else {
-      uploadMessage = "Keine uploadfähigen Dateien."
+      uploadMessage = Self.localized("upload.queue.noEligibleFiles")
       UploadDebugLog.write("[PIXUPLOAD] managedUpload rejected: no pending files")
       return
     }
@@ -520,12 +528,22 @@ final class UploadQueue: ObservableObject {
     isUploading = true
     activeUploadRunId = runId
     let pendingStackCount = stackCount(for: pending)
-    var startMessage = "Upload läuft (\(connection.mode.displayName)): \(pendingStackCount) Motive."
+    var startMessage = Self.localizedFormat(
+      "upload.queue.running.format",
+      connection.mode.displayName,
+      pendingStackCount
+    )
     if skipSummary.skippedCount > 0 {
-      startMessage += " \(skipSummary.skippedStackCount) Motive ohne Job übersprungen."
+      startMessage += " " + Self.localizedFormat(
+        "upload.queue.skippedNoJob.format",
+        skipSummary.skippedStackCount
+      )
     }
     if skipSummary.metadataPendingCount > 0 {
-      startMessage += " \(skipSummary.metadataPendingStackCount) Motive warten noch auf Pflicht-Metadaten."
+      startMessage += " " + Self.localizedFormat(
+        "upload.queue.waitingMetadata.format",
+        skipSummary.metadataPendingStackCount
+      )
     }
     uploadMessage = startMessage
 
@@ -580,14 +598,14 @@ final class UploadQueue: ObservableObject {
     }
   }
 
-  func cancelActiveUpload() {
+  func cancelActiveUpload(message: String? = nil) {
     guard isUploading else { return }
+    let resolvedMessage = message ?? Self.localized("upload.queue.paused")
     activeUploadTask?.cancel()
     activeUploadTask = nil
     activeUploadRunId = nil
     isUploading = false
-    let message = "Upload pausiert. Nicht bestaetigte Dateien bleiben ausstehend und koennen erneut gestartet werden."
-    uploadMessage = message
+    uploadMessage = resolvedMessage
     uploadProgress = PixcaptureUploadProgress(
       mode: uploadProgress?.mode ?? .directR2,
       phase: .failed,
@@ -595,11 +613,11 @@ final class UploadQueue: ObservableObject {
       filesTotal: uploadProgress?.filesTotal ?? records.filter { $0.status == .pending || $0.status == .failed }.count,
       bytesSent: uploadProgress?.bytesSent ?? 0,
       bytesTotal: uploadProgress?.bytesTotal ?? 0,
-      detail: message,
+      detail: resolvedMessage,
       currentFileName: nil
     )
     markPending(records.filter { $0.status == .uploading }.map(\.id))
-    setLatestNotice(message: message, kind: .warning)
+    setLatestNotice(message: resolvedMessage, kind: .warning)
   }
 
   private func finishManagedUpload(
@@ -651,51 +669,70 @@ final class UploadQueue: ObservableObject {
       !hasFailures
       ? (localPackageOnly ? .warning : .success)
       : (result.uploadedRecordIds.isEmpty ? .error : .warning)
-    let motifVerb = stackSummary.completedStacks == 1 ? "wurde" : "wurden"
     var message: String
     if case .cablePackage = connection,
        result.failedRecordIds.isEmpty,
        result.fileErrors.isEmpty,
        !result.verificationFailed {
-      message = "Kabel-Option bereit. Nach lokalem Empfang kann das Telefon getrennt werden; der Rechner überträgt die Daten jetzt in den PixCapture-Speicher. Browser/Receiver bitte offen lassen."
+      message = Self.localized("upload.queue.cableReady")
     } else if case .browserCompanion = connection,
               result.failedRecordIds.isEmpty,
               result.fileErrors.isEmpty,
               !result.verificationFailed {
-      message = "WLAN-Option bereit. Nach lokalem Empfang kann das Telefon frei werden; der Browser überträgt die Daten jetzt in den PixCapture-Speicher. Browser bitte offen lassen."
+      message = Self.localized("upload.queue.browserReady")
     } else if noticeKind == .success {
-      message = "Upload abgeschlossen. \(stackSummary.completedStacks) Motive \(motifVerb) uebertragen und vom Server bestaetigt. Die lokalen Daten bleiben in der App gesichert."
+      message = Self.localizedFormat("upload.queue.completed.format", stackSummary.completedStacks)
     } else if noticeKind == .error,
               result.uploadedRecordIds.isEmpty,
               result.failedRecordIds.isEmpty,
               !result.fileErrors.isEmpty,
               !retryableRecordIds.isEmpty {
-      let reason = result.fileErrors.first?.message ?? "Verbindung fehlgeschlagen."
-      message = "Nicht uebertragen (\(modeLabel)): \(reason) \(stackSummary.totalStacks) Motive bleiben ausstehend und koennen erneut gestartet werden."
+      let reason = result.fileErrors.first?.message ?? Self.localized("upload.queue.connectionFailed")
+      message = Self.localizedFormat(
+        "upload.queue.notTransferred.format",
+        modeLabel,
+        reason,
+        stackSummary.totalStacks
+      )
     } else {
-      let resultLabel = noticeKind == .error ? "Fehlgeschlagen" : "Teilweise fertig"
-      message = "\(resultLabel) (\(modeLabel)): \(stackSummary.completedStacks)/\(stackSummary.totalStacks) Motive komplett, \(stackSummary.failedStacks) mit Fehlern."
+      let resultLabel = noticeKind == .error
+        ? Self.localized("upload.queue.failed")
+        : Self.localized("upload.queue.partiallyCompleted")
+      message = Self.localizedFormat(
+        "upload.queue.summary.format",
+        resultLabel,
+        modeLabel,
+        stackSummary.completedStacks,
+        stackSummary.totalStacks,
+        stackSummary.failedStacks
+      )
       if stackSummary.pendingStacks > 0 {
-        message += " \(stackSummary.pendingStacks) warten auf neuen Versuch."
+        message += " " + Self.localizedFormat("upload.queue.retryWaiting.format", stackSummary.pendingStacks)
       }
       if !retryableRecordIds.isEmpty {
-        message += " Erneut versuchbare Motive bleiben in der Upload-Liste."
+        message += " " + Self.localized("upload.queue.retryableRemain")
       }
       if result.verificationFailed {
         let verificationIssues = result.protocolLogs
           .flatMap(\.mismatches)
           .filter(Self.isCriticalMetadataMismatch)
           .count
-        message += " Pflicht-Metadaten konnten nicht vollstaendig verifiziert werden (\(verificationIssues))."
+        message += " " + Self.localizedFormat("upload.queue.metadataVerificationFailed.format", verificationIssues)
       } else if let latestLog = result.protocolLogs.first,
                 latestLog.receiptPath != nil {
-        message += " Server-Quittung liegt vor."
+        message += " " + Self.localized("upload.queue.serverReceiptAvailable")
       }
       if skipSummary.skippedCount > 0 {
-        message += " \(skipSummary.skippedStackCount) Motive ohne Job übersprungen."
+        message += " " + Self.localizedFormat(
+          "upload.queue.skippedNoJob.format",
+          skipSummary.skippedStackCount
+        )
       }
       if skipSummary.metadataPendingCount > 0 {
-        message += " \(skipSummary.metadataPendingStackCount) Motive warten weiter auf Pflicht-Metadaten."
+        message += " " + Self.localizedFormat(
+          "upload.queue.stillWaitingMetadata.format",
+          skipSummary.metadataPendingStackCount
+        )
       }
     }
     setLatestNotice(message: message, kind: noticeKind)
@@ -809,7 +846,7 @@ final class UploadQueue: ObservableObject {
     if updatedCount > 0 {
       persistRecords()
       setLatestNotice(
-        message: "\(updatedCount) lokal vorhandene Dateien wurden wieder uploadbar gemacht.",
+        message: Self.localizedFormat("upload.queue.localFilesReset.format", updatedCount),
         kind: .warning
       )
     }
@@ -1072,12 +1109,12 @@ final class UploadQueue: ObservableObject {
       latestPackageExportURL = nil
       refreshLocalPackageInventory()
       setLatestNotice(
-        message: "Temporäre lokale Eingangsdaten wurden vom iPhone geloescht.",
+        message: Self.localized("upload.queue.localIntakeDeleted"),
         kind: .success
       )
     } catch {
       setLatestNotice(
-        message: "Temporäre lokale Eingangsdaten konnten nicht geloescht werden: \(error.localizedDescription)",
+        message: Self.localizedFormat("upload.queue.localIntakeDeleteFailed.format", error.localizedDescription),
         kind: .error
       )
     }
@@ -1173,8 +1210,13 @@ final class UploadQueue: ObservableObject {
       refreshLocalRecoveryFileCount()
       let deletedSize = ByteCountFormatter.string(fromByteCount: summary.deletedBytes, countStyle: .file)
       let message = summary.failedFiles > 0
-        ? "\(summary.deletedFiles) lokale Altdateien gelöscht (\(deletedSize)); \(summary.failedFiles) konnten nicht entfernt werden."
-        : "\(summary.deletedFiles) lokale Altdateien gelöscht (\(deletedSize))."
+        ? Self.localizedFormat(
+          "upload.queue.orphansDeletedPartial.format",
+          summary.deletedFiles,
+          deletedSize,
+          summary.failedFiles
+        )
+        : Self.localizedFormat("upload.queue.orphansDeleted.format", summary.deletedFiles, deletedSize)
       setLatestNotice(message: message, kind: summary.failedFiles > 0 ? .warning : .success)
       return summary
     } catch {
@@ -1196,7 +1238,7 @@ final class UploadQueue: ObservableObject {
       guard !summary.records.isEmpty else {
         refreshLocalRecoveryFileCount()
         setLatestNotice(
-          message: "Keine wiederherstellbaren Motive gefunden. Die lokalen Dateien bleiben unverändert.",
+          message: Self.localized("upload.queue.noRecoverableCaptures"),
           kind: .warning
         )
         return summary
@@ -1204,7 +1246,11 @@ final class UploadQueue: ObservableObject {
 
       records.append(contentsOf: summary.records)
       persistRecords()
-      let message = "\(summary.restoredSeries) Motive aus \(summary.restoredRecords) lokalen Originaldateien wiederhergestellt."
+      let message = Self.localizedFormat(
+        "upload.queue.recovered.format",
+        summary.restoredSeries,
+        summary.restoredRecords
+      )
       setLatestNotice(message: message, kind: .success)
       return summary
     } catch {

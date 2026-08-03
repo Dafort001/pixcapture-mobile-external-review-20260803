@@ -23,6 +23,10 @@ final class AuthService: ObservableObject {
   private static let legacyOnboardingKey = "pixcapture.hasSeenFirstRunOnboarding"
   static let mobileInboxMotifLimit = 200
 
+  private static func localizedFormat(_ key: String, _ arguments: CVarArg...) -> String {
+    String(format: NSLocalizedString(key, comment: ""), arguments: arguments)
+  }
+
   var effectiveAccessToken: String? {
     if let accessToken,
        !accessToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -66,7 +70,7 @@ final class AuthService: ObservableObject {
       if isTokenExpired(rawAccessToken, fallbackExpiry: storedAccessExpiry()) {
         clearStoredAccessToken()
         if mobileConnectToken == nil {
-          requireInteractiveLogin(message: "Deine Sitzung ist abgelaufen. Bitte erneut anmelden.")
+          requireInteractiveLogin(message: NSLocalizedString("auth.session.expired", comment: ""))
         }
       } else {
         return rawAccessToken
@@ -77,7 +81,7 @@ final class AuthService: ObservableObject {
        !rawMobileConnectToken.isEmpty {
       if isTokenExpired(rawMobileConnectToken, fallbackExpiry: nil) {
         clearMobileConnectToken()
-        requireInteractiveLogin(message: "Deine Sitzung ist abgelaufen. Bitte erneut anmelden.")
+        requireInteractiveLogin(message: NSLocalizedString("auth.session.expired", comment: ""))
         return nil
       }
       return rawMobileConnectToken
@@ -101,125 +105,25 @@ final class AuthService: ObservableObject {
   }
 
   @discardableResult
-  func requestLoginCode(email: String) async -> Bool {
-    lastError = nil
-    lastInfoMessage = nil
-
-    let normalizedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-    guard !normalizedEmail.isEmpty else {
-      lastError = "Bitte gib eine E-Mail-Adresse ein."
-      return false
-    }
-    guard let url = URL(string: "/api/v2/mobile/auth/request-code", relativeTo: baseURL) else {
-      lastError = "Login konnte nicht vorbereitet werden."
-      return false
-    }
-
-    var request = URLRequest(url: url)
-    request.httpMethod = "POST"
-    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    request.httpBody = try? JSONEncoder().encode(RequestLoginCodeRequest(email: normalizedEmail))
-
-    do {
-      let (data, response) = try await URLSession.shared.data(for: request)
-      guard let http = response as? HTTPURLResponse else {
-        lastError = "Ungueltige Serverantwort."
-        return false
-      }
-
-      guard (200...299).contains(http.statusCode) else {
-        lastError = authErrorMessage(from: data) ?? "Code konnte nicht gesendet werden (\(http.statusCode))."
-        return false
-      }
-
-      if let decoded = try? JSONDecoder().decode(RequestLoginCodeResponse.self, from: data) {
-        lastInfoMessage = decoded.message?.trimmingCharacters(in: .whitespacesAndNewlines)
-      }
-
-      return true
-    } catch {
-      lastError = "Netzwerkfehler: \(error.localizedDescription)"
-      return false
-    }
-  }
-
-  @discardableResult
-  func verifyLoginCode(email: String, code: String) async -> Bool {
-    lastError = nil
-    lastInfoMessage = nil
-
-    let normalizedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-    let normalizedCode = code.trimmingCharacters(in: .whitespacesAndNewlines)
-
-    guard !normalizedEmail.isEmpty else {
-      lastError = "Bitte gib eine E-Mail-Adresse ein."
-      return false
-    }
-
-    guard !normalizedCode.isEmpty else {
-      lastError = "Bitte gib den 6-stelligen Code ein."
-      return false
-    }
-
-    guard let url = URL(string: "/api/v2/mobile/auth/verify-code", relativeTo: baseURL) else {
-      lastError = "Verifizierung konnte nicht vorbereitet werden."
-      return false
-    }
-
-    var request = URLRequest(url: url)
-    request.httpMethod = "POST"
-    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    request.httpBody = try? JSONEncoder().encode(
-      VerifyLoginCodeRequest(email: normalizedEmail, code: normalizedCode)
-    )
-
-    do {
-      let (data, response) = try await URLSession.shared.data(for: request)
-      guard let http = response as? HTTPURLResponse else {
-        lastError = "Ungueltige Serverantwort."
-        return false
-      }
-
-      guard (200...299).contains(http.statusCode) else {
-        lastError = authErrorMessage(from: data) ?? "Code konnte nicht bestaetigt werden (\(http.statusCode))."
-        return false
-      }
-
-      let decoded = try JSONDecoder().decode(VerifyLoginCodeResponse.self, from: data)
-      persistAccessToken(decoded.accessToken, expiresIn: decoded.expiresIn)
-      accessToken = decoded.accessToken
-      userId = extractUserId(from: decoded.accessToken)
-      isAuthenticated = true
-      requiresInteractiveLogin = false
-      availableJobs = []
-      await refreshJobs()
-      return true
-    } catch {
-      lastError = "Netzwerkfehler: \(error.localizedDescription)"
-      return false
-    }
-  }
-
-  @discardableResult
   func loginWithPassword(email: String, password: String) async -> Bool {
     lastError = nil
     lastInfoMessage = nil
 
     let normalizedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-    let normalizedPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
+    let normalizedPassword = password
 
     guard !normalizedEmail.isEmpty else {
-      lastError = "Bitte gib eine E-Mail-Adresse ein."
+      lastError = NSLocalizedString("auth.error.emailMissing", comment: "")
       return false
     }
 
     guard !normalizedPassword.isEmpty else {
-      lastError = "Bitte gib dein Passwort ein."
+      lastError = NSLocalizedString("auth.error.passwordMissing", comment: "")
       return false
     }
 
     guard let url = URL(string: "/api/v2/mobile/auth/password", relativeTo: baseURL) else {
-      lastError = "Passwort-Login konnte nicht vorbereitet werden."
+      lastError = NSLocalizedString("auth.error.loginPreparation", comment: "")
       return false
     }
 
@@ -233,17 +137,21 @@ final class AuthService: ObservableObject {
     do {
       let (data, response) = try await URLSession.shared.data(for: request)
       guard let http = response as? HTTPURLResponse else {
-        lastError = "Ungueltige Serverantwort."
+        lastError = NSLocalizedString("auth.error.invalidResponse", comment: "")
         return false
       }
 
       guard (200...299).contains(http.statusCode) else {
-        lastError = authErrorMessage(from: data) ?? "Passwort-Login fehlgeschlagen (\(http.statusCode))."
+        lastError = authErrorMessage(from: data)
+          ?? Self.localizedFormat("auth.error.loginStatus.format", http.statusCode)
         return false
       }
 
-      let decoded = try JSONDecoder().decode(VerifyLoginCodeResponse.self, from: data)
-      persistAccessToken(decoded.accessToken, expiresIn: decoded.expiresIn)
+      let decoded = try JSONDecoder().decode(MobileAuthTokenResponse.self, from: data)
+      guard persistAccessToken(decoded.accessToken, expiresIn: decoded.expiresIn) else {
+        lastError = NSLocalizedString("auth.error.secureStorageAfterLogin", comment: "")
+        return false
+      }
       accessToken = decoded.accessToken
       userId = extractUserId(from: decoded.accessToken)
       isAuthenticated = true
@@ -252,7 +160,7 @@ final class AuthService: ObservableObject {
       await refreshJobs()
       return true
     } catch {
-      lastError = "Netzwerkfehler: \(error.localizedDescription)"
+      lastError = Self.localizedFormat("auth.error.network.format", error.localizedDescription)
       return false
     }
   }
@@ -308,7 +216,7 @@ final class AuthService: ObservableObject {
     lastInfoMessage = nil
 
     guard let token = effectiveAccessToken else {
-      requireInteractiveLogin(message: "Bitte erneut anmelden.")
+      requireInteractiveLogin(message: NSLocalizedString("auth.signInAgain", comment: ""))
       return nil
     }
 
@@ -321,7 +229,7 @@ final class AuthService: ObservableObject {
     let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
     let cleanAddress = propertyAddress.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !cleanTitle.isEmpty else {
-      lastError = "Jobtitel ist erforderlich."
+      lastError = NSLocalizedString("auth.error.jobTitleRequired", comment: "")
       return nil
     }
 
@@ -336,7 +244,7 @@ final class AuthService: ObservableObject {
     do {
       let (data, response) = try await URLSession.shared.data(for: request)
       guard let http = response as? HTTPURLResponse else {
-        lastError = "Ungueltige Serverantwort."
+        lastError = NSLocalizedString("auth.error.invalidResponse", comment: "")
         return nil
       }
 
@@ -346,7 +254,8 @@ final class AuthService: ObservableObject {
       }
 
       guard (200...299).contains(http.statusCode) else {
-        lastError = authErrorMessage(from: data) ?? "Job konnte nicht erstellt werden (\(http.statusCode))."
+        lastError = authErrorMessage(from: data)
+          ?? Self.localizedFormat("auth.error.jobCreateStatus.format", http.statusCode)
         return nil
       }
 
@@ -361,7 +270,7 @@ final class AuthService: ObservableObject {
       availableJobs.insert(info, at: 0)
       return info
     } catch {
-      lastError = "Netzwerkfehler: \(error.localizedDescription)"
+      lastError = Self.localizedFormat("auth.error.network.format", error.localizedDescription)
       return nil
     }
   }
@@ -371,7 +280,7 @@ final class AuthService: ObservableObject {
     lastInfoMessage = nil
 
     guard let token = effectiveAccessToken else {
-      requireInteractiveLogin(message: "Bitte erneut anmelden.")
+      requireInteractiveLogin(message: NSLocalizedString("auth.signInAgain", comment: ""))
       return nil
     }
 
@@ -384,13 +293,13 @@ final class AuthService: ObservableObject {
     let encodedId = cleanId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? cleanId
     guard !cleanId.isEmpty,
           let url = URL(string: "/api/pixcapture/jobs/\(encodedId)", relativeTo: baseURL) else {
-      lastError = "Job konnte nicht vorbereitet werden."
+      lastError = NSLocalizedString("auth.error.jobPreparation", comment: "")
       return nil
     }
     let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
     let cleanAddress = propertyAddress.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !cleanTitle.isEmpty else {
-      lastError = "Jobtitel ist erforderlich."
+      lastError = NSLocalizedString("auth.error.jobTitleRequired", comment: "")
       return nil
     }
 
@@ -409,7 +318,7 @@ final class AuthService: ObservableObject {
     do {
       let (data, response) = try await URLSession.shared.data(for: request)
       guard let http = response as? HTTPURLResponse else {
-        lastError = "Ungueltige Serverantwort."
+        lastError = NSLocalizedString("auth.error.invalidResponse", comment: "")
         return nil
       }
 
@@ -419,7 +328,8 @@ final class AuthService: ObservableObject {
       }
 
       guard (200...299).contains(http.statusCode) else {
-        lastError = authErrorMessage(from: data) ?? "Job konnte nicht aktualisiert werden (\(http.statusCode))."
+        lastError = authErrorMessage(from: data)
+          ?? Self.localizedFormat("auth.error.jobUpdateStatus.format", http.statusCode)
         return nil
       }
 
@@ -434,7 +344,7 @@ final class AuthService: ObservableObject {
       availableJobs.insert(info, at: 0)
       return info
     } catch {
-      lastError = "Netzwerkfehler: \(error.localizedDescription)"
+      lastError = Self.localizedFormat("auth.error.network.format", error.localizedDescription)
       return nil
     }
   }
@@ -450,7 +360,7 @@ final class AuthService: ObservableObject {
     }
 
     guard let token = effectiveAccessToken else {
-      requireInteractiveLogin(message: "Bitte erneut anmelden, damit der Sammelcontainer angelegt werden kann.")
+      requireInteractiveLogin(message: NSLocalizedString("auth.signInAgainForInbox", comment: ""))
       return nil
     }
 
@@ -476,7 +386,7 @@ final class AuthService: ObservableObject {
     do {
       let (data, response) = try await URLSession.shared.data(for: request)
       guard let http = response as? HTTPURLResponse else {
-        lastError = "Ungueltige Serverantwort."
+        lastError = NSLocalizedString("auth.error.invalidResponse", comment: "")
         return nil
       }
 
@@ -495,7 +405,8 @@ final class AuthService: ObservableObject {
             notes: "pixcapture_mobile_inbox_v1"
           )
         }
-        lastError = serverMessage ?? "Sammelcontainer konnte nicht vorbereitet werden (\(http.statusCode))."
+        lastError = serverMessage
+          ?? Self.localizedFormat("auth.error.inboxStatus.format", http.statusCode)
         return nil
       }
 
@@ -511,7 +422,7 @@ final class AuthService: ObservableObject {
       removeHiddenJobID(info.id)
       return info
     } catch {
-      lastError = "Netzwerkfehler: \(error.localizedDescription)"
+      lastError = Self.localizedFormat("auth.error.network.format", error.localizedDescription)
       return nil
     }
   }
@@ -522,7 +433,7 @@ final class AuthService: ObservableObject {
     lastInfoMessage = nil
 
     guard let token = effectiveAccessToken else {
-      requireInteractiveLogin(message: "Bitte erneut anmelden.")
+      requireInteractiveLogin(message: NSLocalizedString("auth.signInAgain", comment: ""))
       return false
     }
 
@@ -535,7 +446,7 @@ final class AuthService: ObservableObject {
     let encodedId = cleanId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? cleanId
     guard !cleanId.isEmpty,
           let url = URL(string: "/api/pixcapture/jobs/\(encodedId)", relativeTo: baseURL) else {
-      lastError = "Job konnte nicht vorbereitet werden."
+      lastError = NSLocalizedString("auth.error.jobPreparation", comment: "")
       return false
     }
 
@@ -546,7 +457,7 @@ final class AuthService: ObservableObject {
     do {
       let (_, response) = try await URLSession.shared.data(for: request)
       guard let http = response as? HTTPURLResponse else {
-        lastError = "Ungueltige Serverantwort."
+        lastError = NSLocalizedString("auth.error.invalidResponse", comment: "")
         return false
       }
 
@@ -557,7 +468,7 @@ final class AuthService: ObservableObject {
 
       guard (200...299).contains(http.statusCode) else {
         hideJobIDFromMobileList(cleanId)
-        lastInfoMessage = "Job wurde aus der mobilen Liste entfernt. Im Web kann er weiterhin in Archiv oder Verlauf auftauchen."
+        lastInfoMessage = NSLocalizedString("auth.info.jobHiddenLocally", comment: "")
         return true
       }
 
@@ -565,7 +476,7 @@ final class AuthService: ObservableObject {
       removeHiddenJobID(cleanId)
       return true
     } catch {
-      lastError = "Netzwerkfehler: \(error.localizedDescription)"
+      lastError = Self.localizedFormat("auth.error.network.format", error.localizedDescription)
       return false
     }
   }
@@ -580,7 +491,7 @@ final class AuthService: ObservableObject {
     lastInfoMessage = nil
 
     guard let token = effectiveAccessToken else {
-      requireInteractiveLogin(message: "Bitte erneut anmelden, damit die Support-Dateiliste ins Kundenportal gesichert werden kann.")
+      requireInteractiveLogin(message: NSLocalizedString("auth.signInAgainForSupport", comment: ""))
       return false
     }
 
@@ -590,12 +501,12 @@ final class AuthService: ObservableObject {
     }
 
     guard !itemURLs.isEmpty else {
-      lastError = "Keine Support-Dateiliste vorbereitet."
+      lastError = NSLocalizedString("auth.error.supportListEmpty", comment: "")
       return false
     }
 
     guard let url = URL(string: "/api/v2/mobile/support-file-list", relativeTo: baseURL) else {
-      lastError = "Support-Upload konnte nicht vorbereitet werden."
+      lastError = NSLocalizedString("auth.error.supportPreparation", comment: "")
       return false
     }
 
@@ -623,7 +534,7 @@ final class AuthService: ObservableObject {
 
       let (data, response) = try await URLSession.shared.data(for: request)
       guard let http = response as? HTTPURLResponse else {
-        lastError = "Ungueltige Serverantwort."
+        lastError = NSLocalizedString("auth.error.invalidResponse", comment: "")
         return false
       }
 
@@ -633,16 +544,17 @@ final class AuthService: ObservableObject {
       }
 
       guard (200...299).contains(http.statusCode) else {
-        lastError = authErrorMessage(from: data) ?? "Support-Dateiliste konnte nicht ins Kundenportal gesichert werden (\(http.statusCode))."
+        lastError = authErrorMessage(from: data)
+          ?? Self.localizedFormat("auth.error.supportStatus.format", http.statusCode)
         return false
       }
 
       let decoded = try? JSONDecoder().decode(SupportFileListUploadResponse.self, from: data)
       let count = decoded?.files.count ?? files.count
-      lastInfoMessage = "\(count) Support-Dateien wurden im Kundenportal gesichert."
+      lastInfoMessage = Self.localizedFormat("auth.info.supportSaved.format", count)
       return true
     } catch {
-      lastError = "Support-Dateiliste konnte nicht gesichert werden: \(error.localizedDescription)"
+      lastError = Self.localizedFormat("auth.error.supportSave.format", error.localizedDescription)
       return false
     }
   }
@@ -674,7 +586,10 @@ final class AuthService: ObservableObject {
   func setMobileConnectToken(_ rawToken: String) {
     let token = rawToken.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !token.isEmpty else { return }
-    _ = KeychainStore.set(Data(token.utf8), for: mobileConnectKey)
+    guard KeychainStore.set(Data(token.utf8), for: mobileConnectKey) else {
+      lastError = NSLocalizedString("auth.error.secureStorage", comment: "")
+      return
+    }
     mobileConnectToken = token
     if accessToken == nil {
       userId = extractUserId(from: token)
@@ -697,11 +612,26 @@ final class AuthService: ObservableObject {
     lastInfoMessage = nil
   }
 
-  private func persistAccessToken(_ token: String, expiresIn: Int) {
-    _ = KeychainStore.set(Data(token.utf8), for: accessKey)
-    KeychainStore.delete(refreshKey)
+  private func persistAccessToken(_ token: String, expiresIn: Int) -> Bool {
     let expiry = Date().addingTimeInterval(TimeInterval(expiresIn)).timeIntervalSince1970
-    _ = KeychainStore.set(Data(String(expiry).utf8), for: expiryKey)
+    let previousToken = KeychainStore.get(accessKey)
+    let previousExpiry = KeychainStore.get(expiryKey)
+    guard KeychainStore.set(Data(token.utf8), for: accessKey),
+          KeychainStore.set(Data(String(expiry).utf8), for: expiryKey) else {
+      restoreKeychainValue(previousToken, for: accessKey)
+      restoreKeychainValue(previousExpiry, for: expiryKey)
+      return false
+    }
+    KeychainStore.delete(refreshKey)
+    return true
+  }
+
+  private func restoreKeychainValue(_ value: Data?, for key: String) {
+    if let value {
+      _ = KeychainStore.set(value, for: key)
+    } else {
+      KeychainStore.delete(key)
+    }
   }
 
   private func loadFromKeychain() {
@@ -757,7 +687,7 @@ final class AuthService: ObservableObject {
 
   private func expireStoredAccessToken() {
     clearStoredAccessToken()
-    requireInteractiveLogin(message: "Deine Sitzung ist abgelaufen. Bitte erneut anmelden.")
+    requireInteractiveLogin(message: NSLocalizedString("auth.session.expired", comment: ""))
   }
 
   private func expireCurrentSession() {
@@ -768,7 +698,7 @@ final class AuthService: ObservableObject {
 
     if mobileConnectToken != nil {
       clearMobileConnectToken()
-      requireInteractiveLogin(message: "Deine Sitzung ist abgelaufen. Bitte erneut anmelden.")
+      requireInteractiveLogin(message: NSLocalizedString("auth.session.expired", comment: ""))
     }
   }
 

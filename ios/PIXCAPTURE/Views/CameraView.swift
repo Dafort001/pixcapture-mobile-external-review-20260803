@@ -198,6 +198,13 @@ struct CameraView: View {
     scene = AnyView(scene.sheet(isPresented: $isUploadPresented) {
       UploadQueueView()
     })
+    scene = AnyView(scene.onChange(of: isUploadPresented) { _, isPresented in
+      if isPresented {
+        camera.stopSession()
+      } else {
+        camera.startSession()
+      }
+    })
     scene = AnyView(scene.sheet(isPresented: $isCameraToolsPresented) {
       cameraToolsSheet()
         .presentationDetents([.height(560), .large])
@@ -375,7 +382,7 @@ struct CameraView: View {
     guard now >= shutterLockoutUntil else { return }
     guard !isRoomPickerPresented && !isUploadPresented && !isFormatPickerPresented && !isCameraToolsPresented else { return }
     guard let resolvedJob = resolvedCaptureJob() else {
-      camera.warningMessage = "Bitte zuerst einen Job waehlen."
+      camera.warningMessage = NSLocalizedString("camera.warning.selectJob", comment: "")
       isJobPickerPresented = true
       return
     }
@@ -384,7 +391,7 @@ struct CameraView: View {
     }
     settings.touchCurrentJobActivity(userScope: authService.recentJobScope)
     if settings.photoCaptureMode == .standardBracket, settings.bracketCount > 1 {
-      showTemporaryGuidanceHint("Halte ruhig: \(settings.bracketCount) Aufnahmen für HDR")
+      showTemporaryGuidanceHint(l10nFormat("camera.guidance.hdrHold.format", settings.bracketCount))
     }
     let singleShotAssessment = makeSingleShotAssessment(triggeredAt: now)
     let captureDelaySeconds = settings.photoCaptureMode == .singleShot && normalizedTimerSeconds == 0
@@ -809,18 +816,18 @@ struct CameraView: View {
         }
 
         VStack(alignment: .leading, spacing: 8) {
-          Text("Aufnahmemodus")
+          Text(l10n("camera.tools.captureMode"))
             .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(.secondary)
           HStack(spacing: 8) {
-            toolsChoiceButton("Belichtungsreihe", isSelected: settings.photoCaptureMode == .standardBracket) {
+            toolsChoiceButton(l10n("camera.captureMode.bracket"), isSelected: settings.photoCaptureMode == .standardBracket) {
               settings.photoCaptureMode = .standardBracket
             }
-            toolsChoiceButton("Einzelbild", isSelected: settings.photoCaptureMode == .singleShot) {
+            toolsChoiceButton(l10n("camera.captureMode.single"), isSelected: settings.photoCaptureMode == .singleShot) {
               settings.photoCaptureMode = .singleShot
             }
           }
-          Text(settings.photoCaptureMode == .singleShot ? "Schnell. Gut bei hellem Raum und stabiler Haltung." : bracketLabelText)
+          Text(settings.photoCaptureMode == .singleShot ? l10n("camera.captureMode.single.help") : bracketLabelText)
             .font(.system(size: 12, weight: .medium))
             .foregroundStyle(.secondary)
         }
@@ -1206,24 +1213,24 @@ struct CameraView: View {
   private var guidanceHintText: String {
     if let progress = camera.captureProgress,
        progress.total > 1 {
-      return "Belichtungsreihe aktiv - nicht bewegen"
+      return l10n("camera.guidance.bracketActive")
     }
 
     if camera.sharpnessQualityState == .bad, !camera.isCapturing {
-      return "Unscharf - erneut aufnehmen?"
+      return l10n("camera.guidance.blurry")
     }
 
     if AppFeatureFlags.cameraGuidanceHintsEnabled,
        !camera.isCapturing,
        maxGuidanceTiltDegrees > CameraGuidanceCatalog.tiltThresholdDegrees {
-      return "Vertikalen ausrichten"
+      return l10n("camera.guidance.alignVerticals")
     }
 
     if let guidanceHintOverride {
       return guidanceHintOverride
     }
 
-    return currentGuidanceRule.defaultHint
+    return l10n(currentGuidanceRule.defaultHintKey)
   }
 
   private var maxGuidanceTiltDegrees: Double {
@@ -1451,9 +1458,9 @@ struct CameraView: View {
       )
       return "\(settings.bracketCount)x  \(String(format: "%.1f", effectiveStepEV)) EV"
     case .darkRoom:
-      return "Kellermodus · 1 Bild"
+      return l10n("camera.captureMode.darkRoom.oneImage")
     case .singleShot:
-      return "Einzelbild"
+      return l10n("camera.captureMode.single")
     }
   }
 
@@ -1554,17 +1561,19 @@ struct CameraView: View {
 
   private var stabilityIndicatorLabel: String {
     if camera.stabilityState == .unstable {
-      return "Instabil"
+      return l10n("camera.level.unstable")
     }
 
     let tilt = maxGuidanceTiltDegrees
     if tilt > CameraGuidanceCatalog.tiltThresholdDegrees {
-      return "Schief"
+      return l10n("camera.level.tilted")
     }
     if tilt > CameraGuidanceCatalog.alignedThresholdDegrees {
-      return "Ausrichten"
+      return l10n("camera.level.align")
     }
-    return camera.stabilityState == .stable ? "Gerade" : "Ruhig halten"
+    return camera.stabilityState == .stable
+      ? l10n("camera.level.straight")
+      : l10n("camera.level.holdStill")
   }
 
   private var stabilityIndicatorColor: Color {
@@ -1617,10 +1626,20 @@ struct CameraView: View {
 
   @ViewBuilder
   private func warningBanner() -> some View {
-    if let message = camera.warningMessage {
-      Text(message)
-        .font(.subheadline)
-        .multilineTextAlignment(.center)
+    if let message = camera.warningMessage ?? camera.cameraInterruptionMessage {
+      VStack(spacing: 8) {
+        Text(message)
+          .font(.subheadline)
+          .multilineTextAlignment(.center)
+        if camera.cameraAccessDenied {
+          Button(NSLocalizedString("camera.permission.openSettings", comment: "")) {
+            guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+            UIApplication.shared.open(url)
+          }
+          .buttonStyle(.borderedProminent)
+          .accessibilityIdentifier("camera.permission.openSettings")
+        }
+      }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .background(Color.black.opacity(0.7))
@@ -1819,7 +1838,7 @@ private enum CameraGuidanceSkeleton {
 }
 
 private struct CameraGuidanceRule {
-  let defaultHint: String
+  let defaultHintKey: String
   let skeleton: CameraGuidanceSkeleton
 }
 
@@ -1832,42 +1851,42 @@ private enum CameraGuidanceCatalog {
     switch roomId {
     case "kitchen", "living_kitchen", "dining_room", "pantry", "utility_room":
       return CameraGuidanceRule(
-        defaultHint: "Kamera ruhig und gerade halten",
+        defaultHintKey: "camera.guidance.holdStraight",
         skeleton: .kitchenCountertop
       )
     case "bathroom", "guest_wc":
       return CameraGuidanceRule(
-        defaultHint: "Kamera ruhig und gerade halten",
+        defaultHintKey: "camera.guidance.holdStraight",
         skeleton: .bathroomMirrorSink
       )
     case "living_room", "studio", "conservatory":
       return CameraGuidanceRule(
-        defaultHint: "Kamera ruhig und gerade halten",
+        defaultHintKey: "camera.guidance.holdStraight",
         skeleton: .livingWindowSeating
       )
     case "bedroom", "children_room", "guest_room":
       return CameraGuidanceRule(
-        defaultHint: "Kamera ruhig und gerade halten",
+        defaultHintKey: "camera.guidance.holdStraight",
         skeleton: .bedroomSimpleFrame
       )
     case "hallway", "corridor", "stairs":
       return CameraGuidanceRule(
-        defaultHint: "Kamera ruhig und gerade halten",
+        defaultHintKey: "camera.guidance.holdStraight",
         skeleton: .hallwayPerspective
       )
     case "exterior", "street", "garage", "carport", "driveway", "outbuilding":
       return CameraGuidanceRule(
-        defaultHint: "Kamera ruhig und gerade halten",
+        defaultHintKey: "camera.guidance.holdStraight",
         skeleton: .exteriorFacade
       )
     case "balcony", "terrace", "roof_terrace", "garden", "courtyard":
       return CameraGuidanceRule(
-        defaultHint: "Kamera ruhig und gerade halten",
+        defaultHintKey: "camera.guidance.holdStraight",
         skeleton: .balconyView
       )
     default:
       return CameraGuidanceRule(
-        defaultHint: "Kanten gerade halten",
+        defaultHintKey: "camera.guidance.keepEdgesStraight",
         skeleton: .genericRoom
       )
     }

@@ -185,6 +185,11 @@ struct RootView: View {
     }
     .onChange(of: scenePhase) { _, phase in
       updateIdleTimerForUpload(isUploading: uploadQueue.isUploading, scenePhase: phase)
+      if phase != .active, uploadQueue.isUploading {
+        uploadQueue.cancelActiveUpload(
+          message: settings.localized("upload.foreground.paused")
+        )
+      }
     }
     .onDisappear {
       UIApplication.shared.isIdleTimerDisabled = false

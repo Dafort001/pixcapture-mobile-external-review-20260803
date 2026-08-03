@@ -26,7 +26,7 @@ struct LevelOverlayView: View {
           .rotationEffect(.radians(rotation))
           .offset(x: xOffset, y: yOffset)
         crosshair(size: cross)
-        angleReadout(roll: rollDegrees, pitch: pitchDegrees, color: stateColor, topPadding: base * 0.85)
+        angleReadout(roll: rollDegrees, pitch: pitchDegrees, topPadding: base * 0.85)
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -74,10 +74,12 @@ struct LevelOverlayView: View {
     }
   }
 
-  private func angleReadout(roll: Double, pitch: Double, color: Color, topPadding: CGFloat) -> some View {
+  private func angleReadout(roll: Double, pitch: Double, topPadding: CGFloat) -> some View {
     return Text(String(format: "R %.1f°  P %.1f°", roll, pitch))
       .font(.system(size: 12, weight: .semibold, design: .monospaced))
-      .foregroundStyle(color)
+      // Keep the numeric reading independent of the red/green status encoding.
+      // PixCapture blue remains legible on black for red-green color deficiencies.
+      .foregroundStyle(PixBrand.lightBlue)
       .padding(.horizontal, 10)
       .padding(.vertical, 6)
       .background(Color.black.opacity(0.45))

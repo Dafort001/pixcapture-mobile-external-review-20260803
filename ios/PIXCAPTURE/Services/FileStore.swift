@@ -290,7 +290,9 @@ nonisolated enum FileStore {
       try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
     }
     var values = URLResourceValues()
-    values.isExcludedFromBackup = true
+    // User-created recordings are not reproducible. Keep them eligible for an
+    // encrypted device backup until the user explicitly removes them.
+    values.isExcludedFromBackup = false
     try? dir.setResourceValues(values)
     return dir
   }
@@ -879,14 +881,15 @@ nonisolated enum FileStore {
 
   static func ensureCaptureDirectory() throws -> URL {
     // Use Application Support so captures survive across days (Caches can be purged by iOS).
-    // Exclude from iCloud backup because captures can be large and are usually ephemeral.
+    // Captures are user-created originals, not reproducible cache data. Older
+    // releases excluded this directory; explicitly clear that resource flag.
     let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
     var dir = support.appendingPathComponent("PixCapture", isDirectory: true)
     if !FileManager.default.fileExists(atPath: dir.path) {
       try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
     }
     var values = URLResourceValues()
-    values.isExcludedFromBackup = true
+    values.isExcludedFromBackup = false
     try? dir.setResourceValues(values)
     return dir
   }

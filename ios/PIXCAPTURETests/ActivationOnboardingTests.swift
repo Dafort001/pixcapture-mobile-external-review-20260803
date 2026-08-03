@@ -13,6 +13,15 @@ struct ActivationOnboardingTests {
     #expect(contrast >= 7.0)
   }
 
+  @Test("Level readout blue has sufficient contrast on black")
+  func levelReadoutBlueHasAccessibleContrast() throws {
+    let textColor = UIColor(PixBrand.lightBlue)
+    let components = try #require(rgbComponents(of: textColor))
+    let contrast = (relativeLuminance(components) + 0.05) / 0.05
+
+    #expect(contrast >= 4.5)
+  }
+
   @Test("German guidance allows offline capture and describes both SMS stages")
   func germanActivationGuidanceUsesOfflineCaptureAndSms() {
     let offline = AppLocalizer.localized(

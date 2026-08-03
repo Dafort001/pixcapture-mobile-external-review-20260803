@@ -193,23 +193,27 @@ enum SceneAdaptiveBracketPlan {
     case .fixedFive:
       return nil
     case .highContrastSeven:
-      return "Hochkontrast erkannt. Automatisch 7er-Reihe mit engeren EV-Abstaenden."
+      return NSLocalizedString("camera.warning.highContrastSeries", comment: "")
     }
   }
 }
 
 final class CameraManager: NSObject, ObservableObject {
-  private static let log = Logger(subsystem: "app.pixcapture.PIXCAPTURE", category: "CameraSession")
+  nonisolated private static let log = Logger(subsystem: "app.pixcapture.PIXCAPTURE", category: "CameraSession")
   private static let rawZoomFallbackWarning = NSLocalizedString("warning.proRawZoomFallback", comment: "ProRAW zoom fallback warning")
   private static let rawStackingFallbackWarning = NSLocalizedString("warning.proRawStackingFallback", comment: "ProRAW stacking fallback warning")
-  private static let transientCameraInterruptionWarning = "Kamera kurz pausiert. Die Vorschau wird neu gestartet."
-  private static let cameraInUseWarning = "Kamera wird gerade von einer anderen App verwendet."
-  private static let multipleForegroundAppsWarning = "Kamera nicht verfügbar (Mehrfach-Apps)."
-  private static let systemPressureWarning = "Kamera pausiert wegen hoher Systemlast."
+  private static let transientCameraInterruptionWarning = NSLocalizedString("camera.interruption.transient", comment: "")
+  private static let cameraInUseWarning = NSLocalizedString("camera.interruption.inUse", comment: "")
+  private static let multipleForegroundAppsWarning = NSLocalizedString("camera.interruption.multipleApps", comment: "")
+  private static let systemPressureWarning = NSLocalizedString("camera.interruption.systemPressure", comment: "")
   private static let minStartSessionIntervalSeconds: TimeInterval = 0.75
   private static let lensSwitchSettleDelaySeconds: TimeInterval = 0.25
   private static let captureRequestDebounceSeconds: TimeInterval = 0.35
   private static let iso8601DateFormatter = ISO8601DateFormatter()
+
+  private static func localizedFormat(_ key: String, _ arguments: CVarArg...) -> String {
+    String(format: NSLocalizedString(key, comment: ""), arguments: arguments)
+  }
   let session = AVCaptureSession()
 
   @Published var isSessionRunning = false
@@ -229,6 +233,8 @@ final class CameraManager: NSObject, ObservableObject {
   @Published var cameraDebugInfo: String = ""
   @Published var lastSummary: CaptureSeriesSummary?
   @Published var warningMessage: String?
+  @Published private(set) var cameraInterruptionMessage: String?
+  @Published private(set) var cameraAccessDenied = false
   @Published var captureProgress: CaptureProgress?
   @Published var captureDebugInfo: String?
   @Published var bracketAELockActive: Bool = false
@@ -294,8 +300,6 @@ final class CameraManager: NSObject, ObservableObject {
   private var isConfigured = false
   private var hasConfiguredSession = false
   private var wantsSessionRunning = false
-  private var isStartInFlight = false
-  private var isStopInFlight = false
   private var lastStartSessionAttemptUptime: TimeInterval = 0
   private var pendingStartWorkItem: DispatchWorkItem?
   private var hasInstalledSessionObservers = false
@@ -331,9 +335,13 @@ final class CameraManager: NSObject, ObservableObject {
       let granted = await requestCameraAccessIfNeeded()
       guard granted else {
         DispatchQueue.main.async {
-          self.warningMessage = "Kamera-Zugriff verweigert."
+          self.warningMessage = NSLocalizedString("camera.permission.denied", comment: "")
+          self.cameraAccessDenied = true
         }
         return
+      }
+      DispatchQueue.main.async {
+        self.cameraAccessDenied = false
       }
       self.sessionQueue.async { [weak self] in
         self?.configureSession()
@@ -406,7 +414,7 @@ final class CameraManager: NSObject, ObservableObject {
 
     guard let device = selectBackCamera() else {
       DispatchQueue.main.async {
-        self.warningMessage = "No camera device available."
+        self.warningMessage = NSLocalizedString("camera.error.deviceUnavailable", comment: "")
       }
       session.commitConfiguration()
       return
@@ -418,7 +426,7 @@ final class CameraManager: NSObject, ObservableObject {
       if session.canAddInput(input) { session.addInput(input) }
     } catch {
       DispatchQueue.main.async {
-        self.warningMessage = "Camera input error: \(error.localizedDescription)"
+        self.warningMessage = Self.localizedFormat("camera.error.input.format", error.localizedDescription)
       }
       session.commitConfiguration()
       return
@@ -492,15 +500,7 @@ final class CameraManager: NSObject, ObservableObject {
         Self.log.debug("stopSession ignored(already-stopped)")
         return
       }
-      if self.isStopInFlight {
-        Self.log.debug("stopSession ignored(in-flight)")
-        return
-      }
-
-      self.isStopInFlight = true
-      self.isStartInFlight = false
       self.session.stopRunning()
-      self.isStopInFlight = false
       Self.log.debug("stopSession applied")
       DispatchQueue.main.async {
         self.isSessionRunning = false
@@ -521,15 +521,6 @@ final class CameraManager: NSObject, ObservableObject {
       Self.log.debug("startSession ignored(already-running)")
       return
     }
-    if isStartInFlight {
-      Self.log.debug("startSession ignored(in-flight)")
-      return
-    }
-    if isStopInFlight {
-      Self.log.debug("startSession deferred(stop-in-flight)")
-      scheduleStartRetryOnQueue(after: 0.20)
-      return
-    }
     if applyThrottle {
       let now = ProcessInfo.processInfo.systemUptime
       let elapsed = now - lastStartSessionAttemptUptime
@@ -542,10 +533,7 @@ final class CameraManager: NSObject, ObservableObject {
       lastStartSessionAttemptUptime = now
     }
 
-    isStartInFlight = true
-    isStopInFlight = false
     session.startRunning()
-    isStartInFlight = false
 
     if !wantsSessionRunning {
       Self.log.debug("startSession rollback(stop-requested)")
@@ -624,7 +612,7 @@ final class CameraManager: NSObject, ObservableObject {
       }
     } catch {
       DispatchQueue.main.async {
-        self.warningMessage = "Focus lock error: \(error.localizedDescription)"
+        self.warningMessage = Self.localizedFormat("camera.error.focusLock.format", error.localizedDescription)
       }
     }
   }
@@ -647,7 +635,7 @@ final class CameraManager: NSObject, ObservableObject {
         device.unlockForConfiguration()
       } catch {
         DispatchQueue.main.async {
-          self.warningMessage = "White balance error: \(error.localizedDescription)"
+          self.warningMessage = Self.localizedFormat("camera.error.whiteBalance.format", error.localizedDescription)
         }
       }
     }
@@ -671,7 +659,7 @@ final class CameraManager: NSObject, ObservableObject {
         device.unlockForConfiguration()
       } catch {
         DispatchQueue.main.async {
-          self.warningMessage = "White balance error: \(error.localizedDescription)"
+          self.warningMessage = Self.localizedFormat("camera.error.whiteBalance.format", error.localizedDescription)
         }
       }
     }
@@ -703,7 +691,7 @@ final class CameraManager: NSObject, ObservableObject {
         device.unlockForConfiguration()
       } catch {
         DispatchQueue.main.async {
-          self.warningMessage = "Exposure bias error: \(error.localizedDescription)"
+          self.warningMessage = Self.localizedFormat("camera.error.exposureBias.format", error.localizedDescription)
         }
       }
     }
@@ -737,12 +725,12 @@ final class CameraManager: NSObject, ObservableObject {
         }
         if preset < 1.0 && targetDevice.deviceType != .builtInUltraWideCamera {
           DispatchQueue.main.async {
-            self.warningMessage = "Ultraweit nicht verfügbar."
+            self.warningMessage = NSLocalizedString("camera.warning.ultraWideUnavailable", comment: "")
           }
         }
       } catch {
         DispatchQueue.main.async {
-          self.warningMessage = "Zoom error: \(error.localizedDescription)"
+          self.warningMessage = Self.localizedFormat("camera.error.zoom.format", error.localizedDescription)
           self.cameraDebugInfo = "Zoom error"
         }
       }
@@ -840,7 +828,7 @@ final class CameraManager: NSObject, ObservableObject {
       }
     } catch {
       DispatchQueue.main.async {
-        self.warningMessage = "Camera switch error: \(error.localizedDescription)"
+        self.warningMessage = Self.localizedFormat("camera.error.switch.format", error.localizedDescription)
       }
     }
   }
@@ -887,7 +875,7 @@ final class CameraManager: NSObject, ObservableObject {
       device.unlockForConfiguration()
     } catch {
       DispatchQueue.main.async {
-        self.warningMessage = "Formatwahl fehlgeschlagen: \(error.localizedDescription)"
+        self.warningMessage = Self.localizedFormat("camera.error.formatSelection.format", error.localizedDescription)
       }
     }
   }
@@ -930,7 +918,7 @@ final class CameraManager: NSObject, ObservableObject {
       streamDepthSupported = preferredDepthFormat != nil
     } catch {
       DispatchQueue.main.async {
-        self.warningMessage = "Depth-Konfiguration fehlgeschlagen: \(error.localizedDescription)"
+        self.warningMessage = Self.localizedFormat("camera.error.depthConfiguration.format", error.localizedDescription)
       }
       streamDepthSupported = false
     }
@@ -1080,14 +1068,14 @@ final class CameraManager: NSObject, ObservableObject {
       if let startedAt = captureStartedAt, Date().timeIntervalSince(startedAt) > 12 {
         isCapturing = false
         captureProgress = nil
-        warningMessage = "Aufnahme zurückgesetzt."
+        warningMessage = NSLocalizedString("camera.capture.reset", comment: "")
       } else {
         return
       }
     }
 
     guard session.isRunning, videoDevice != nil else {
-      warningMessage = "Kamera nicht bereit."
+      warningMessage = NSLocalizedString("camera.error.notReady", comment: "")
       return
     }
     let now = Date()
@@ -1132,7 +1120,7 @@ final class CameraManager: NSObject, ObservableObject {
         self.isCapturing = false
         self.captureProgress = nil
         self.captureStartedAt = nil
-        self.warningMessage = "Aufnahme-Timeout. Bitte erneut auslösen."
+        self.warningMessage = NSLocalizedString("camera.capture.timeout", comment: "")
       }
     }
   }
@@ -1469,13 +1457,19 @@ final class CameraManager: NSObject, ObservableObject {
     }
     if !usesSceneAdaptiveBracketPlan, effectiveFormat != .proRaw, config.stepEV > stepEV + 0.000_1 {
       let activeFormatName = "JPEG"
-      warnings.append("Aktives Format: \(activeFormatName). Der EV-Abstand ist deshalb auf \(String(format: "%.1f", stepEV)) EV begrenzt.")
+      warnings.append(
+        String(
+          format: NSLocalizedString("camera.warning.evSpacing.format", comment: ""),
+          activeFormatName,
+          stepEV
+        )
+      )
     }
     if usesHighlightAnchorMetering {
       warnings.append(NSLocalizedString("warning.highlightAnchor", comment: "Highlight anchor warning"))
     }
     if isExterior, centerShiftEV > 0.000_1 {
-      warnings.append("Außenreihe wurde heller verschoben, damit die dunkelsten Frames echte EV-Abstände behalten.")
+      warnings.append(NSLocalizedString("camera.warning.exteriorShift", comment: ""))
     }
     if highlightPriorityShiftEV < 0 {
       warnings.append(NSLocalizedString("warning.highlightPriority", comment: "Highlight priority warning"))
@@ -2504,26 +2498,11 @@ final class CameraManager: NSObject, ObservableObject {
   }
 
   private func currentCaptureVideoOrientation() -> CaptureOrientation {
-    switch UIDevice.current.orientation {
-    case .portrait:
-      lastCaptureOrientation = .portrait
-      return .portrait
-    case .portraitUpsideDown:
-      lastCaptureOrientation = .portrait
-      return .portrait
-    case .landscapeLeft:
-      // Device left is camera/right in capture coordinates.
-      lastCaptureOrientation = .landscapeRight
-      return .landscapeRight
-    case .landscapeRight:
-      lastCaptureOrientation = .landscapeLeft
-      return .landscapeLeft
-    default:
-      break
-    }
-
-    if let sceneOrientation = preferredForegroundWindowScene()?.effectiveGeometry.interfaceOrientation,
-       let mappedOrientation = captureOrientation(from: sceneOrientation) {
+    let resolvedOrientation = LevelMonitor.resolveLevelOrientation(
+      deviceOrientation: UIDevice.current.orientation,
+      sceneOrientation: preferredForegroundWindowScene()?.effectiveGeometry.interfaceOrientation
+    )
+    if let mappedOrientation = captureOrientation(from: resolvedOrientation) {
       lastCaptureOrientation = normalizedCaptureOrientation(mappedOrientation)
       return lastCaptureOrientation
     }
@@ -2686,9 +2665,7 @@ final class CameraManager: NSObject, ObservableObject {
     sessionObserverTokens.append(
       nc.addObserver(forName: AVCaptureSession.interruptionEndedNotification, object: session, queue: .main) { [weak self] _ in
         guard let self else { return }
-        if self.isCameraInterruptionWarning(self.warningMessage) {
-          self.warningMessage = nil
-        }
+        self.cameraInterruptionMessage = nil
         if self.wantsSessionRunning {
           self.startSession()
         }
@@ -2719,7 +2696,10 @@ final class CameraManager: NSObject, ObservableObject {
     Self.log.error("runtimeError code=\(nsError.code) message=\(nsError.localizedDescription, privacy: .public)")
 
     DispatchQueue.main.async {
-      self.warningMessage = "Camera runtime error: \(nsError.localizedDescription)"
+      self.warningMessage = String(
+        format: NSLocalizedString("camera.error.runtime.format", comment: ""),
+        nsError.localizedDescription
+      )
     }
   }
 
@@ -2741,19 +2721,7 @@ final class CameraManager: NSObject, ObservableObject {
     Self.log.error("sessionInterrupted reason=\(String(describing: reason), privacy: .public)")
 
     DispatchQueue.main.async {
-      self.warningMessage = text
-    }
-  }
-
-  private func isCameraInterruptionWarning(_ message: String?) -> Bool {
-    switch message {
-    case Self.transientCameraInterruptionWarning,
-         Self.cameraInUseWarning,
-         Self.multipleForegroundAppsWarning,
-         Self.systemPressureWarning:
-      return true
-    default:
-      return false
+      self.cameraInterruptionMessage = text
     }
   }
 
@@ -3289,7 +3257,7 @@ private extension CameraManager {
       device.unlockForConfiguration()
     } catch {
       DispatchQueue.main.async {
-        self.warningMessage = "Belichtung zurücksetzen fehlgeschlagen."
+        self.warningMessage = NSLocalizedString("camera.error.exposureReset", comment: "")
       }
     }
   }
@@ -3397,7 +3365,7 @@ private extension CameraManager {
     }
   }
 
-  private func focusModeToken(_ mode: AVCaptureDevice.FocusMode) -> String {
+  nonisolated private func focusModeToken(_ mode: AVCaptureDevice.FocusMode) -> String {
     switch mode {
     case .locked:
       return "locked"
@@ -3532,7 +3500,7 @@ private extension CameraManager {
           activeDevice.unlockForConfiguration()
         } catch {
           DispatchQueue.main.async {
-            self.warningMessage = "Focus lock error: \(error.localizedDescription)"
+            self.warningMessage = Self.localizedFormat("camera.error.focusLock.format", error.localizedDescription)
           }
         }
       }
@@ -3602,7 +3570,11 @@ private extension CameraManager {
 
     if let exifISOValue, isoDeviationExceedsTolerance(actualISO: exifISOValue, requestedISO: Double(pending.iso)) {
       DispatchQueue.main.async {
-        self.warningMessage = "ISO weicht ab (\(Int(exifISOValue)) statt \(Int(pending.iso)))."
+        self.warningMessage = Self.localizedFormat(
+          "camera.warning.isoMismatch.format",
+          Int(exifISOValue),
+          Int(pending.iso)
+        )
       }
     }
 
@@ -4233,7 +4205,7 @@ private extension CameraManager {
       return true
     } catch {
       DispatchQueue.main.async {
-        self.warningMessage = "Depth-Sidecar konnte nicht gespeichert werden."
+        self.warningMessage = NSLocalizedString("camera.error.depthSidecar", comment: "")
       }
       return false
     }
@@ -4371,7 +4343,7 @@ private extension CameraManager {
       try FileStore.saveCompanionXMP(for: fileURL, metadata: metadata)
     } catch {
       DispatchQueue.main.async {
-        self.warningMessage = "XMP-Metadaten konnten nicht gespeichert werden."
+        self.warningMessage = NSLocalizedString("camera.error.xmpMetadata", comment: "")
       }
     }
   }
@@ -4481,13 +4453,13 @@ extension CameraError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .noDevice:
-      return "Keine Kamera verfügbar."
+      return NSLocalizedString("camera.error.deviceUnavailable", comment: "")
     case .customExposureNotSupported:
-      return "Manuelle Belichtungszeit wird auf diesem Gerät/Modus nicht unterstützt."
+      return NSLocalizedString("camera.error.customExposureUnsupported", comment: "")
     case .photoDataUnavailable:
-      return "Bilddaten konnten von der Kamera nicht geliefert werden."
+      return NSLocalizedString("camera.error.photoDataUnavailable", comment: "")
     case .captureProcessingFailed:
-      return "Lange Belichtungsreihe konnte nicht sauber verarbeitet werden."
+      return NSLocalizedString("camera.error.captureProcessing", comment: "")
     }
   }
 }

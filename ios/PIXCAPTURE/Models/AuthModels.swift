@@ -1,25 +1,11 @@
 import Foundation
 
-struct RequestLoginCodeRequest: Codable {
-  let email: String
-}
-
-struct RequestLoginCodeResponse: Codable {
-  let success: Bool
-  let message: String?
-}
-
-struct VerifyLoginCodeRequest: Codable {
-  let email: String
-  let code: String
-}
-
 struct PasswordLoginRequest: Codable {
   let email: String
   let password: String
 }
 
-struct VerifyLoginCodeResponse: Codable {
+struct MobileAuthTokenResponse: Codable {
   let accessToken: String
   let expiresIn: Int
 }

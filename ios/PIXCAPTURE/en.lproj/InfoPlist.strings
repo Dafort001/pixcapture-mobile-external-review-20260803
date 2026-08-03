@@ -1,0 +1,6 @@
+"NSCameraUsageDescription" = "PIXCAPTURE needs camera access to capture exposure brackets and videos.";
+"NSLocalNetworkUsageDescription" = "PIXCAPTURE connects to the companion on your computer over the local network to transfer encrypted upload packages.";
+"NSMotionUsageDescription" = "PIXCAPTURE uses motion sensors to level and align the camera.";
+"NSPhotoLibraryAddUsageDescription" = "PIXCAPTURE saves recordings to the Photos app when you choose to do so.";
+"NSPhotoLibraryUsageDescription" = "PIXCAPTURE needs access to selected photos to save and transfer recordings.";
+"NSWorldSensingUsageDescription" = "PIXCAPTURE uses ARKit to measure distances between points in floorplan mode.";

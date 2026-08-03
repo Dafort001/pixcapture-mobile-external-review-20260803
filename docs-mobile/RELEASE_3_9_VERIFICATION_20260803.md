@@ -9,14 +9,16 @@ Build ersetzt keinen realen Geräte- oder Übertragungstest.
 
 ## Bereits lokal nachgewiesen
 
-- [x] Debug-Simulatorbuild ohne ausgelagertes OpenCV-Framework erfolgreich.
+- [x] Debug-Simulatorbuild und generischer Release-Gerätebuild ohne
+  ausgelagertes OpenCV-Framework erfolgreich. Das Release-Bundle meldet
+  Version `3.9`, Build `202608031930`, Architektur `arm64`.
 - [x] Erzeugtes App-Bundle enthält Portrait, Landscape Left und Landscape Right
   als unterstützte iPhone-Ausrichtungen.
 - [x] App-Store-3.8-Fehler anhand Daniels Screenshots reproduziert: Portrait
   `R 0,0° / P 1,2°`, Landscape in gleicher Lage `R -89,8° / P 0,7°`.
-- [x] 66 Unit-/Integrationstests erfolgreich, einschließlich fünf neuer
-  Level-/Querformat-Regressionstests, vorhandener Galerie-Orientierungstests
-  sowie Kontrast- und SMS-Aktivierungstests in Deutsch und Englisch.
+- [x] 74 Unit-/Integrations-/Logiktests erfolgreich, einschließlich neuer
+  Level-/Querformat-, Browser-ACK-, Companion-Receipt-, Kontrast- und
+  SMS-Aktivierungstests in Deutsch und Englisch.
 - [x] Gezielter Erststart-UI-Test erfolgreich: Ohne Anmeldung bis zum lokalen
   Startbildschirm; keine Kamera-Berechtigungsabfrage vor der bewussten
   Kamerawahl; vollständiger Textbereich bis zur letzten Aktion scrollbar und
@@ -24,10 +26,39 @@ Build ersetzt keinen realen Geräte- oder Übertragungstest.
 - [x] Erststart im Simulator visuell geprüft: Offline-Fotografie steht an
   erster Stelle, beide SMS-Stufen sind erklärt, und Fließtext auf Schwarz nutzt
   kontrastreiches warmes Greige statt Orange.
+- [x] Der gesicherte Seeburg-Testbestand wurde nur in einen iPhone-17-Pro-
+  Simulator zurückgespielt. Der Galerie-Upload-UI-Test wählt eine echte Serie,
+  öffnet den Uploaddialog und bestätigt, dass Companion und Cloud sichtbar
+  sind und der Companion-Start vor QR-Kopplung deaktiviert bleibt.
+- [x] Vollständiger Simulator-Testlauf: 86 Tests bestanden; drei echte
+  Netz-/Authentifizierungs-E2E-Szenarien wurden ohne produktive Zugangsdaten
+  beziehungsweise QR-Payload erwartungsgemäß übersprungen.
+- [x] Der lokale Companion-Receiver nahm das reale Seeburg-Paket mit exakt
+  1.849.171.856 Byte und korrektem SHA-256 an. Ein absichtlich falscher Hash
+  ergab HTTP 422; keine beschädigte Zieldatei blieb zurück.
+- [x] Browser-Gegenstück: fünf Receipt-/ICE-Konfigurationstests sowie
+  TypeScript-Typprüfung erfolgreich.
 - [x] Signierter Debug-Build für Daniels verbundenes iPhone 15 Pro Max
-  erfolgreich; noch nicht installiert.
-- [ ] Vollständige UI-Suite: ein bestehender Galerie-Test benötigt Testdaten;
-  drei echte Upload-E2E-Tests wurden ohne Zugangsdaten/QR-Payload übersprungen.
+  erfolgreich; bewusst noch nicht installiert, damit dessen Kundendaten nicht
+  berührt werden.
+
+## Noch nicht als produktionsreif nachgewiesen
+
+- Die Orientierungsrechnung und die beiden Querformatdeklarationen sind im
+  Code und durch Regressionstests korrigiert. Das sichtbare grüne Quadrat muss
+  dennoch auf einem echten iPhone in Portrait, Landscape Left und Landscape
+  Right nachgewiesen werden.
+- Der WebRTC-Vertrag wartet jetzt auf eine exakte Browserbestätigung aus
+  Paket-ID, Bytezahl und SHA-256 und beendet Fehler/Timeouts statt bei 0 KB zu
+  hängen. Ein produktiver TURN-Dienst ist jedoch noch nicht provisioniert;
+  netzübergreifende Zuverlässigkeit darf deshalb noch nicht zugesagt werden.
+- Uploads sind bewusst Vordergrundübertragungen. Beim Sperren oder Verlassen
+  der App wird der aktive Versuch abgebrochen und bleibt wiederholbar; ein
+  echter iOS-Hintergrundupload ist nicht implementiert.
+- Swift Strict Concurrency (`targeted`) ist aktiv. Der Release-Build hat noch
+  sechs bekannte Warnungen im historisch gewachsenen `CameraManager`; deren
+  strukturelle Actor-Isolation ist eine eigene, realgerätepflichtige Arbeit
+  und wurde nicht mit `nonisolated(unsafe)` kaschiert.
 
 ## Pflichtnachweis A – Kamera und Nivellierung auf echtem iPhone
 
