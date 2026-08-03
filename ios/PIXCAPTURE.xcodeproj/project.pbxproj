@@ -1,0 +1,666 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		E7A100000000000000000001 /* WebRTC in Frameworks */ = {isa = PBXBuildFile; productRef = E7A100000000000000000003 /* WebRTC */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		DD48D36B2F3479FD006ED727 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DD48D3552F3479FC006ED727 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DD48D35C2F3479FC006ED727;
+			remoteInfo = PIXCAPTURE;
+		};
+		DD48D3752F3479FD006ED727 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DD48D3552F3479FC006ED727 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DD48D35C2F3479FC006ED727;
+			remoteInfo = PIXCAPTURE;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		DD48D35D2F3479FC006ED727 /* PIXCAPTURE.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PIXCAPTURE.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DD48D36A2F3479FD006ED727 /* PIXCAPTURETests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PIXCAPTURETests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DD48D3742F3479FD006ED727 /* PIXCAPTUREUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PIXCAPTUREUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		DD48D3872F3479FD006ED727 /* Exceptions for "PIXCAPTURE" folder in "PIXCAPTURE" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = DD48D35C2F3479FC006ED727 /* PIXCAPTURE */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		DD48D35F2F3479FC006ED727 /* PIXCAPTURE */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				DD48D3872F3479FD006ED727 /* Exceptions for "PIXCAPTURE" folder in "PIXCAPTURE" target */,
+			);
+			path = PIXCAPTURE;
+			sourceTree = "<group>";
+		};
+		DD48D36D2F3479FD006ED727 /* PIXCAPTURETests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PIXCAPTURETests;
+			sourceTree = "<group>";
+		};
+		DD48D3772F3479FD006ED727 /* PIXCAPTUREUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PIXCAPTUREUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		DD48D35A2F3479FC006ED727 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E7A100000000000000000001 /* WebRTC in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DD48D3672F3479FD006ED727 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DD48D3712F3479FD006ED727 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		DD48D3542F3479FC006ED727 = {
+			isa = PBXGroup;
+			children = (
+				DD48D35F2F3479FC006ED727 /* PIXCAPTURE */,
+				DD48D36D2F3479FD006ED727 /* PIXCAPTURETests */,
+				DD48D3772F3479FD006ED727 /* PIXCAPTUREUITests */,
+				DD48D35E2F3479FC006ED727 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		DD48D35E2F3479FC006ED727 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				DD48D35D2F3479FC006ED727 /* PIXCAPTURE.app */,
+				DD48D36A2F3479FD006ED727 /* PIXCAPTURETests.xctest */,
+				DD48D3742F3479FD006ED727 /* PIXCAPTUREUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		DD48D35C2F3479FC006ED727 /* PIXCAPTURE */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DD48D37E2F3479FD006ED727 /* Build configuration list for PBXNativeTarget "PIXCAPTURE" */;
+			buildPhases = (
+				DD48D3592F3479FC006ED727 /* Sources */,
+				DD48D35A2F3479FC006ED727 /* Frameworks */,
+				DD48D35B2F3479FC006ED727 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				DD48D35F2F3479FC006ED727 /* PIXCAPTURE */,
+			);
+			name = PIXCAPTURE;
+			packageProductDependencies = (
+				E7A100000000000000000003 /* WebRTC */,
+			);
+			productName = PIXCAPTURE;
+			productReference = DD48D35D2F3479FC006ED727 /* PIXCAPTURE.app */;
+			productType = "com.apple.product-type.application";
+		};
+		DD48D3692F3479FD006ED727 /* PIXCAPTURETests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DD48D3812F3479FD006ED727 /* Build configuration list for PBXNativeTarget "PIXCAPTURETests" */;
+			buildPhases = (
+				DD48D3662F3479FD006ED727 /* Sources */,
+				DD48D3672F3479FD006ED727 /* Frameworks */,
+				DD48D3682F3479FD006ED727 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DD48D36C2F3479FD006ED727 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				DD48D36D2F3479FD006ED727 /* PIXCAPTURETests */,
+			);
+			name = PIXCAPTURETests;
+			packageProductDependencies = (
+			);
+			productName = PIXCAPTURETests;
+			productReference = DD48D36A2F3479FD006ED727 /* PIXCAPTURETests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		DD48D3732F3479FD006ED727 /* PIXCAPTUREUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DD48D3842F3479FD006ED727 /* Build configuration list for PBXNativeTarget "PIXCAPTUREUITests" */;
+			buildPhases = (
+				DD48D3702F3479FD006ED727 /* Sources */,
+				DD48D3712F3479FD006ED727 /* Frameworks */,
+				DD48D3722F3479FD006ED727 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DD48D3762F3479FD006ED727 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				DD48D3772F3479FD006ED727 /* PIXCAPTUREUITests */,
+			);
+			name = PIXCAPTUREUITests;
+			packageProductDependencies = (
+			);
+			productName = PIXCAPTUREUITests;
+			productReference = DD48D3742F3479FD006ED727 /* PIXCAPTUREUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DD48D3552F3479FC006ED727 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2630;
+				LastUpgradeCheck = 2630;
+				TargetAttributes = {
+					DD48D35C2F3479FC006ED727 = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					DD48D3692F3479FD006ED727 = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = DD48D35C2F3479FC006ED727;
+					};
+					DD48D3732F3479FD006ED727 = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = DD48D35C2F3479FC006ED727;
+					};
+				};
+			};
+			buildConfigurationList = DD48D3582F3479FC006ED727 /* Build configuration list for PBXProject "PIXCAPTURE" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+				de,
+			);
+			mainGroup = DD48D3542F3479FC006ED727;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = DD48D35E2F3479FC006ED727 /* Products */;
+			packageReferences = (
+				E7A100000000000000000002 /* XCRemoteSwiftPackageReference "WebRTC" */,
+			);
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				DD48D35C2F3479FC006ED727 /* PIXCAPTURE */,
+				DD48D3692F3479FD006ED727 /* PIXCAPTURETests */,
+				DD48D3732F3479FD006ED727 /* PIXCAPTUREUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		DD48D35B2F3479FC006ED727 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DD48D3682F3479FD006ED727 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DD48D3722F3479FD006ED727 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		DD48D3592F3479FC006ED727 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DD48D3662F3479FD006ED727 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DD48D3702F3479FD006ED727 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		DD48D36C2F3479FD006ED727 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DD48D35C2F3479FC006ED727 /* PIXCAPTURE */;
+			targetProxy = DD48D36B2F3479FD006ED727 /* PBXContainerItemProxy */;
+		};
+		DD48D3762F3479FD006ED727 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DD48D35C2F3479FC006ED727 /* PIXCAPTURE */;
+			targetProxy = DD48D3752F3479FD006ED727 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		DD48D37C2F3479FD006ED727 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = WCZK9Z358Q;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		DD48D37D2F3479FD006ED727 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_COVERAGE_MAPPING = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = WCZK9Z358Q;
+				ENABLE_CODE_COVERAGE = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		DD48D37F2F3479FD006ED727 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PIXCAPTURE/PIXCAPTURE.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 202607172137;
+				DEVELOPMENT_TEAM = WCZK9Z358Q;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PIXCAPTURE/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "PixCapture benötigt Zugriff auf die Kamera, um Belichtungsreihen aufzunehmen.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "PixCapture nutzt Bewegungssensoren zur Ausrichtung der Wasserwaage.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "PixCapture speichert Fotos auf Wunsch in der Fotos-App.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "PixCapture benötigt Zugriff auf die Fotobibliothek, um Fotos zu sichern.";
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				MARKETING_VERSION = 3.8;
+				PRODUCT_BUNDLE_IDENTIFIER = app.pixcapture.PIXCAPTURE.PIXCAPTURE;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "PIXCAPTURE/PIXCAPTURE-Bridging-Header.h";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		DD48D3802F3479FD006ED727 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PIXCAPTURE/PIXCAPTURE.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CLANG_COVERAGE_MAPPING = NO;
+				CURRENT_PROJECT_VERSION = 202607172137;
+				DEVELOPMENT_TEAM = WCZK9Z358Q;
+				ENABLE_CODE_COVERAGE = NO;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PIXCAPTURE/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "PixCapture benötigt Zugriff auf die Kamera, um Belichtungsreihen aufzunehmen.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "PixCapture nutzt Bewegungssensoren zur Ausrichtung der Wasserwaage.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "PixCapture speichert Fotos auf Wunsch in der Fotos-App.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "PixCapture benötigt Zugriff auf die Fotobibliothek, um Fotos zu sichern.";
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				MARKETING_VERSION = 3.8;
+				PRODUCT_BUNDLE_IDENTIFIER = app.pixcapture.PIXCAPTURE.PIXCAPTURE;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "PIXCAPTURE/PIXCAPTURE-Bridging-Header.h";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		DD48D3822F3479FD006ED727 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 202607172137;
+				DEVELOPMENT_TEAM = WCZK9Z358Q;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 3.8;
+				PRODUCT_BUNDLE_IDENTIFIER = app.pixcapture.PIXCAPTURE.PIXCAPTURETests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PIXCAPTURE.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PIXCAPTURE";
+			};
+			name = Debug;
+		};
+		DD48D3832F3479FD006ED727 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 202607172137;
+				DEVELOPMENT_TEAM = WCZK9Z358Q;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 3.8;
+				PRODUCT_BUNDLE_IDENTIFIER = app.pixcapture.PIXCAPTURE.PIXCAPTURETests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PIXCAPTURE.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PIXCAPTURE";
+			};
+			name = Release;
+		};
+		DD48D3852F3479FD006ED727 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 202607172137;
+				DEVELOPMENT_TEAM = WCZK9Z358Q;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 3.8;
+				PRODUCT_BUNDLE_IDENTIFIER = app.pixcapture.PIXCAPTURE.PIXCAPTUREUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = PIXCAPTURE;
+			};
+			name = Debug;
+		};
+		DD48D3862F3479FD006ED727 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 202607172137;
+				DEVELOPMENT_TEAM = WCZK9Z358Q;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 3.8;
+				PRODUCT_BUNDLE_IDENTIFIER = app.pixcapture.PIXCAPTURE.PIXCAPTUREUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = PIXCAPTURE;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E7A100000000000000000002 /* XCRemoteSwiftPackageReference "WebRTC" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/stasel/WebRTC.git";
+			requirement = {
+				kind = exactVersion;
+				version = 148.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E7A100000000000000000003 /* WebRTC */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E7A100000000000000000002 /* XCRemoteSwiftPackageReference "WebRTC" */;
+			productName = WebRTC;
+		};
+/* End XCSwiftPackageProductDependency section */
+
+/* Begin XCConfigurationList section */
+		DD48D3582F3479FC006ED727 /* Build configuration list for PBXProject "PIXCAPTURE" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DD48D37C2F3479FD006ED727 /* Debug */,
+				DD48D37D2F3479FD006ED727 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DD48D37E2F3479FD006ED727 /* Build configuration list for PBXNativeTarget "PIXCAPTURE" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DD48D37F2F3479FD006ED727 /* Debug */,
+				DD48D3802F3479FD006ED727 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DD48D3812F3479FD006ED727 /* Build configuration list for PBXNativeTarget "PIXCAPTURETests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DD48D3822F3479FD006ED727 /* Debug */,
+				DD48D3832F3479FD006ED727 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DD48D3842F3479FD006ED727 /* Build configuration list for PBXNativeTarget "PIXCAPTUREUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DD48D3852F3479FD006ED727 /* Debug */,
+				DD48D3862F3479FD006ED727 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = DD48D3552F3479FC006ED727 /* Project object */;
+}

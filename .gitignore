@@ -1,0 +1,24 @@
+.DS_Store
+
+# Node local dependencies
+backend/node_modules/
+
+# Local env files
+backend/.env
+backend/.env.local
+backend/.env.*.local
+
+# Xcode user-specific state
+ios/**/*.xcuserstate
+ios/**/*.xcuserdata/
+ios/**/xcuserdata/
+
+# Optional local build output
+ios/DerivedData/
+build/
+builds/
+tmp-review/
+
+# Local device/container backups.
+# Keep locally: these include future ArUco/OpenCV geometry verification data.
+device-backups/
