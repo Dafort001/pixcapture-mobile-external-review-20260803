@@ -60,41 +60,7 @@ enum RoomPlanFloorplanRenderer {
   }
 
   static func metrics(for segments: [FloorplanSegment]) -> FloorplanMetrics {
-    guard !segments.isEmpty else {
-      return FloorplanMetrics(perimeterMeters: 0, widthMeters: 0, depthMeters: 0, areaSqmApprox: 0)
-    }
-
-    var minX = Double.greatestFiniteMagnitude
-    var maxX = -Double.greatestFiniteMagnitude
-    var minY = Double.greatestFiniteMagnitude
-    var maxY = -Double.greatestFiniteMagnitude
-    var perimeter = 0.0
-
-    func updateBounds(x: Double, y: Double) {
-      minX = min(minX, x)
-      maxX = max(maxX, x)
-      minY = min(minY, y)
-      maxY = max(maxY, y)
-    }
-
-    for seg in segments {
-      updateBounds(x: seg.ax, y: seg.ay)
-      updateBounds(x: seg.bx, y: seg.by)
-      let dx = seg.bx - seg.ax
-      let dy = seg.by - seg.ay
-      perimeter += (dx * dx + dy * dy).squareRoot()
-    }
-
-    let width = max(0, maxX - minX)
-    let depth = max(0, maxY - minY)
-    let area = convexHullArea(points: uniquePoints(from: segments))
-
-    return FloorplanMetrics(
-      perimeterMeters: perimeter,
-      widthMeters: width,
-      depthMeters: depth,
-      areaSqmApprox: area
-    )
+    FloorplanPolygonGeometry.evaluate(segments: segments).metrics
   }
 
   static func writeSegmentsJSON(
@@ -239,6 +205,57 @@ enum RoomPlanFloorplanRenderer {
     try data.write(to: outputURL, options: [.atomic])
   }
 
+  static func renderPNG(
+    segmentsFile: FloorplanSegmentsFile,
+    outputURL: URL,
+    canvasSize: CGSize = CGSize(width: 1400, height: 1400)
+  ) throws {
+    guard !segmentsFile.segments.isEmpty else {
+      throw NSError(domain: "RoomPlanFloorplanRenderer", code: 1, userInfo: [
+        NSLocalizedDescriptionKey: "Keine Wände im manuellen Raumgrundriss gefunden."
+      ])
+    }
+    let room = FloorplanPlanRenderer.Room(
+      scanId: UUID(),
+      roomId: "manual_room_preview",
+      floorId: FloorTaxonomy.defaultFloorId,
+      walls: segmentsFile.segments,
+      doors: segmentsFile.doors ?? [],
+      openings: segmentsFile.openings ?? [],
+      windows: segmentsFile.windows ?? [],
+      doorSwingOverrides: segmentsFile.doorSwingOverrides ?? []
+    )
+    let layout = FloorplanPlanRenderer.layout(for: [room])
+    let padding: CGFloat = 70
+    let viewport = CGRect(
+      x: padding,
+      y: padding,
+      width: max(1, canvasSize.width - padding * 2),
+      height: max(1, canvasSize.height - padding * 2)
+    )
+    let mapping = FloorplanPlanRenderer.makeMapping(bounds: layout.bounds, viewport: viewport, minimumScale: 0)
+    let renderer = UIGraphicsImageRenderer(size: canvasSize)
+    let image = renderer.image { context in
+      let cg = context.cgContext
+      cg.setFillColor(UIColor.white.cgColor)
+      cg.fill(CGRect(origin: .zero, size: canvasSize))
+      FloorplanPlanRenderer.drawBasePlan(
+        cg: cg,
+        rooms: [room],
+        layout: layout,
+        mapping: mapping,
+        style: .singleRoomPreview,
+        labelMode: .none
+      )
+    }
+    guard let data = image.pngData() else {
+      throw NSError(domain: "RoomPlanFloorplanRenderer", code: 2, userInfo: [
+        NSLocalizedDescriptionKey: "PNG konnte nicht erzeugt werden."
+      ])
+    }
+    try data.write(to: outputURL, options: [.atomic])
+  }
+
   private static func worldRotationRadians(capturedRoom: CapturedRoom) -> Double? {
     if let floor = capturedRoom.floors.first {
       return yawRadians(from: floor.transform)
@@ -270,47 +287,6 @@ enum RoomPlanFloorplanRenderer {
     )
   }
 
-  private struct Point: Comparable, Hashable {
-    let x: Double
-    let y: Double
-
-    static func < (lhs: Point, rhs: Point) -> Bool {
-      if lhs.x != rhs.x { return lhs.x < rhs.x }
-      return lhs.y < rhs.y
-    }
-  }
-
-  private static func uniquePoints(from segments: [FloorplanSegment]) -> [Point] {
-    // Deduplicate with a small tolerance to reduce hull jitter from tiny gaps.
-    let tol = 0.03 // 3cm
-    var buckets: [Point] = []
-    buckets.reserveCapacity(segments.count * 2)
-
-    func insert(_ p: Point) {
-      for existing in buckets {
-        let dx = existing.x - p.x
-        let dy = existing.y - p.y
-        if (dx * dx + dy * dy).squareRoot() < tol {
-          return
-        }
-      }
-      buckets.append(p)
-    }
-
-    for seg in segments {
-      insert(Point(x: seg.ax, y: seg.ay))
-      insert(Point(x: seg.bx, y: seg.by))
-    }
-
-    return buckets
-  }
-
-  private static func normalizeToOrigin(segments: [FloorplanSegment]) -> [FloorplanSegment] {
-    guard !segments.isEmpty else { return segments }
-    guard let (minX, minY) = originOffset(segments: segments) else { return segments }
-    return applyOffset(segments: segments, dx: -minX, dy: -minY)
-  }
-
   private static func originOffset(segments: [FloorplanSegment]) -> (Double, Double)? {
     guard !segments.isEmpty else { return nil }
     var minX = Double.greatestFiniteMagnitude
@@ -335,40 +311,5 @@ enum RoomPlanFloorplanRenderer {
     }
   }
 
-  private static func convexHullArea(points: [Point]) -> Double {
-    let pts = points.sorted()
-    guard pts.count >= 3 else { return 0 }
-
-    func cross(_ o: Point, _ a: Point, _ b: Point) -> Double {
-      (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x)
-    }
-
-    var lower: [Point] = []
-    for p in pts {
-      while lower.count >= 2 && cross(lower[lower.count - 2], lower[lower.count - 1], p) <= 0 {
-        lower.removeLast()
-      }
-      lower.append(p)
-    }
-
-    var upper: [Point] = []
-    for p in pts.reversed() {
-      while upper.count >= 2 && cross(upper[upper.count - 2], upper[upper.count - 1], p) <= 0 {
-        upper.removeLast()
-      }
-      upper.append(p)
-    }
-
-    // Remove last because it's repeated.
-    let hull = Array(lower.dropLast() + upper.dropLast())
-    guard hull.count >= 3 else { return 0 }
-
-    var sum = 0.0
-    for i in 0..<hull.count {
-      let j = (i + 1) % hull.count
-      sum += hull[i].x * hull[j].y - hull[j].x * hull[i].y
-    }
-    return abs(sum) * 0.5
-  }
 }
 #endif

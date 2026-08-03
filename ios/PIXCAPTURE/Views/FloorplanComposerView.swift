@@ -2408,32 +2408,8 @@ struct FloorplanComposerView: View {
   }
 
   private func manualRoomMetrics(points: [DPoint], segments: [FloorplanSegment]) -> FloorplanMetrics {
-    guard !segments.isEmpty else {
-      return FloorplanMetrics(perimeterMeters: 0, widthMeters: 0, depthMeters: 0, areaSqmApprox: 0)
-    }
-
-    var perimeter = 0.0
-    var minX = Double.greatestFiniteMagnitude
-    var maxX = -Double.greatestFiniteMagnitude
-    var minY = Double.greatestFiniteMagnitude
-    var maxY = -Double.greatestFiniteMagnitude
-
-    for seg in segments {
-      perimeter += segmentLength(seg)
-    }
-    for point in points {
-      minX = min(minX, point.x)
-      maxX = max(maxX, point.x)
-      minY = min(minY, point.y)
-      maxY = max(maxY, point.y)
-    }
-
-    return FloorplanMetrics(
-      perimeterMeters: perimeter,
-      widthMeters: max(0, maxX - minX),
-      depthMeters: max(0, maxY - minY),
-      areaSqmApprox: polygonArea(points: points)
-    )
+    _ = points
+    return FloorplanPolygonGeometry.evaluate(segments: segments).metrics
   }
 
   private func handleManualRouteTap(at pWorld: DPoint) {

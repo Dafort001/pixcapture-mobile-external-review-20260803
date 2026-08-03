@@ -1,6 +1,14 @@
 import Foundation
 
 struct ExifLogEntry: Codable {
+  let schemaVersion: Int?
+  let pixcaptureVersion: String?
+  let pixcaptureBuild: String?
+  let levelCoordinateSystem: String?
+  let rawPixelFormatType: UInt32?
+  let rawPixelFormatFourCC: String?
+  let rawCaptureKind: String?
+  let previewRawDecoderVersion: String?
   let fileName: String
   let sequenceNumber: Int?
   let zone: String?

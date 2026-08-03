@@ -412,11 +412,26 @@ struct PIXCAPTURETests {
     #expect(selected?.height == 4284)
   }
 
-  @Test("RAW selector keeps the original first DNG pixel type")
-  func rawPixelFormatSelectorChoosesFirstDNGType() {
-    let selected = RawPixelFormatSelector.preferredSensorRawPixelFormatType(in: [111, 222, 333])
+  @Test("RAW selector prefers sensor Bayer over an earlier Apple ProRAW type")
+  func rawPixelFormatSelectorPrefersBayerType() {
+    let selected = RawPixelFormatSelector.preferredSensorRawPixelFormatType(
+      in: [111, 222, 333],
+      isBayer: { $0 == 333 },
+      isAppleProRAW: { $0 == 111 }
+    )
 
-    #expect(selected == 111)
+    #expect(selected == 333)
+  }
+
+  @Test("RAW selector uses a non-ProRAW fallback when Bayer is unavailable")
+  func rawPixelFormatSelectorUsesNonProRawFallback() {
+    let selected = RawPixelFormatSelector.preferredSensorRawPixelFormatType(
+      in: [111, 222],
+      isBayer: { _ in false },
+      isAppleProRAW: { $0 == 111 }
+    )
+
+    #expect(selected == 222)
   }
 
   @Test("RAW selector reports an empty DNG list")
@@ -424,6 +439,128 @@ struct PIXCAPTURETests {
     let selected = RawPixelFormatSelector.preferredSensorRawPixelFormatType(in: [])
 
     #expect(selected == nil)
+  }
+
+  @Test("RAW provenance renders a stable FourCC token")
+  func rawPixelFormatFourCCIsStable() {
+    #expect(RawCaptureProvenance.fourCC(for: 0x42415952) == "BAYR")
+    #expect(RawCaptureProvenance.fourCC(for: nil) == nil)
+  }
+
+  @Test("Floorplan geometry uses the closed concave polygon instead of its convex hull")
+  func floorplanGeometryPreservesConcaveArea() {
+    let points = [
+      FloorplanPoint2D(x: 0, y: 0),
+      FloorplanPoint2D(x: 3, y: 0),
+      FloorplanPoint2D(x: 3, y: 1),
+      FloorplanPoint2D(x: 1, y: 1),
+      FloorplanPoint2D(x: 1, y: 3),
+      FloorplanPoint2D(x: 0, y: 3)
+    ]
+    let ordered = FloorplanPolygonGeometry.segments(forClosedPolygon: points)
+    let shuffled = [ordered[3], ordered[0], ordered[5], ordered[2], ordered[1], ordered[4]]
+    let result = FloorplanPolygonGeometry.evaluate(segments: shuffled)
+
+    #expect(abs(result.metrics.areaSqmApprox - 5.0) < 0.000_1)
+    #expect(result.metrics.areaMethod == .closedPolygon)
+    #expect(result.polygon.count == 6)
+  }
+
+  @Test("Floorplan geometry is invariant when the polygon is mirrored")
+  func floorplanGeometryIsMirrorInvariant() {
+    let points = [
+      FloorplanPoint2D(x: 0, y: 0),
+      FloorplanPoint2D(x: 4, y: 0),
+      FloorplanPoint2D(x: 4, y: 2),
+      FloorplanPoint2D(x: 1, y: 2),
+      FloorplanPoint2D(x: 1, y: 3),
+      FloorplanPoint2D(x: 0, y: 3)
+    ]
+    let mirrored = points.map { FloorplanPoint2D(x: -$0.x, y: $0.y) }
+    let originalResult = FloorplanPolygonGeometry.evaluate(
+      segments: FloorplanPolygonGeometry.segments(forClosedPolygon: points)
+    )
+    let mirroredResult = FloorplanPolygonGeometry.evaluate(
+      segments: FloorplanPolygonGeometry.segments(forClosedPolygon: mirrored)
+    )
+
+    #expect(abs(originalResult.metrics.areaSqmApprox - mirroredResult.metrics.areaSqmApprox) < 0.000_1)
+    #expect(mirroredResult.metrics.areaMethod == .closedPolygon)
+  }
+
+  @Test("Incomplete floorplan geometry declares its convex-hull fallback")
+  func floorplanGeometryDeclaresFallback() {
+    let result = FloorplanPolygonGeometry.evaluate(segments: [
+      FloorplanSegment(ax: 0, ay: 0, bx: 2, by: 0),
+      FloorplanSegment(ax: 2, ay: 0, bx: 2, by: 1),
+      FloorplanSegment(ax: 2, ay: 1, bx: 0, by: 2)
+    ])
+
+    #expect(result.metrics.areaMethod == .convexHullFallback)
+    #expect(result.metrics.areaSqmApprox > 0)
+  }
+
+  @Test("Self-intersecting floorplan rings are not accepted as closed room polygons")
+  func floorplanGeometryRejectsSelfIntersection() {
+    let bowTie = [
+      FloorplanPoint2D(x: 0, y: 0),
+      FloorplanPoint2D(x: 2, y: 2),
+      FloorplanPoint2D(x: 0, y: 2),
+      FloorplanPoint2D(x: 2, y: 0)
+    ]
+    let result = FloorplanPolygonGeometry.evaluate(
+      segments: FloorplanPolygonGeometry.segments(forClosedPolygon: bowTie)
+    )
+
+    #expect(result.metrics.areaMethod == .convexHullFallback)
+  }
+
+  @Test("Floorplan handoff exposes only the measured PNG and visual PDF")
+  func floorplanFinalExportContractExcludesDataArtifacts() {
+    let root = URL(fileURLWithPath: "/tmp/pixcapture-floorplan-contract")
+    let paths = FloorplanProjectPaths(
+      root: root,
+      roomsDir: root.appendingPathComponent("rooms"),
+      projectJSON: root.appendingPathComponent("project.json"),
+      combinedPNG: root.appendingPathComponent("floorplan.png"),
+      combinedPDF: root.appendingPathComponent("floorplan.pdf"),
+      visualPDF: root.appendingPathComponent("floorplan_plan.pdf"),
+      dataPDF: root.appendingPathComponent("floorplan_data.pdf"),
+      dataCSV: root.appendingPathComponent("floorplan_data.csv"),
+      summaryCSV: root.appendingPathComponent("floorplan_summary.csv"),
+      roomsCSV: root.appendingPathComponent("floorplan_rooms.csv"),
+      crmPropertyCSV: root.appendingPathComponent("floorplan_crm_property_import.csv"),
+      crmRoomsCSV: root.appendingPathComponent("floorplan_crm_rooms_import.csv"),
+      openImmoXML: root.appendingPathComponent("floorplan_openimmo.xml"),
+      measurementsJSON: root.appendingPathComponent("measurements.json")
+    )
+
+    #expect(FloorplanProjectStore.finalExportURLs(paths: paths).map(\.lastPathComponent) == [
+      "floorplan.png", "floorplan_plan.pdf"
+    ])
+    #expect(FloorplanProjectStore.dataExportURLs(paths: paths).isEmpty)
+  }
+
+  @Test("Legacy EXIF logs decode without the new provenance keys")
+  func legacyExifLogRemainsDecodable() throws {
+    let data = try #require(
+      """
+      {
+        "fileName": "legacy.jpg",
+        "requestedBiasEV": 0,
+        "requestedAspectRatio": 1.333333,
+        "requestedExposureEV": 0,
+        "exposureEV": 0,
+        "requestedSeconds": 0.01,
+        "requestedISO": 100
+      }
+      """.data(using: .utf8)
+    )
+    let decoded = try JSONDecoder().decode(ExifLogEntry.self, from: data)
+
+    #expect(decoded.fileName == "legacy.jpg")
+    #expect(decoded.schemaVersion == nil)
+    #expect(decoded.rawCaptureKind == nil)
   }
 
   @Test("Extreme backlight heuristic prefers a brighter interior fallback when only tiny highlights clip")

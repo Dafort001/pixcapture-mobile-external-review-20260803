@@ -2205,7 +2205,6 @@ final class PixcaptureUploadService {
   ) throws -> [PreparedUploadTarget] {
     var targets = try preparePhotoSessionTargets(records)
     targets.append(contentsOf: prepareVideoSessionTargets(jobId: jobId))
-    targets.append(contentsOf: prepareFloorplanSessionTargets(jobId: jobId, records: records))
     targets.append(contentsOf: preparePanoramaSessionTargets(jobId: jobId))
 
     return targets.sorted { lhs, rhs in
@@ -2970,41 +2969,15 @@ final class PixcaptureUploadService {
     records: [UploadRecord]
   ) {
     guard !project.roomScans.isEmpty else { return }
-
-    let normalizedJobId = jobId.trimmingCharacters(in: .whitespacesAndNewlines)
-    let projectName = records
-      .filter {
-        let recordJobId = $0.jobId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return !normalizedJobId.isEmpty && recordJobId == normalizedJobId
-      }
-      .compactMap { normalizedStringToken($0.jobLabel) }
-      .first
-      ?? normalizedStringToken(project.projectKey)
-      ?? "Floorplan"
-
-    let exportMetadata = FloorplanComposerRenderer.ExportMetadata(
-      projectKey: project.projectKey,
-      projectName: projectName,
-      jobId: normalizedJobId,
-      jobAddress: "",
-      projectCreatedAt: project.createdAt,
-      generatedAt: Date()
-    )
+    _ = jobId
+    _ = records
 
     _ = try? FloorplanComposerRenderer.exportCombinedFloorplan(
       project: project,
       outputPNG: paths.combinedPNG,
-      outputPDF: paths.combinedPDF,
       outputVisualPDF: paths.visualPDF,
-      outputDataPDF: paths.dataPDF,
-      outputDataCSV: paths.dataCSV,
-      outputSummaryCSV: paths.summaryCSV,
-      outputRoomsCSV: paths.roomsCSV,
-      outputCRMPropertyCSV: paths.crmPropertyCSV,
-      outputCRMRoomsCSV: paths.crmRoomsCSV,
-      outputOpenImmoXML: paths.openImmoXML,
-      exportTitle: projectName,
-      exportMetadata: exportMetadata,
+      legacyOutputURLs: FloorplanProjectStore.legacyExportURLs(paths: paths),
+      exportTitle: "PIXCAPTURE Grundriss",
       resolveURL: { rel in try FloorplanProjectStore.resolve(projectKey: project.projectKey, relativePath: rel) }
     )
   }
@@ -3104,22 +3077,9 @@ final class PixcaptureUploadService {
         }
       }
 
-      if let prepared = try? makePreparedTarget(
-        fileId: "panorama_\(bundleURL.lastPathComponent.lowercased())_metadata",
-        recordId: nil,
-        fileURL: metadataURL,
-        relativePath: "PanoramaTours/\(bundleURL.lastPathComponent)/metadata.json",
-        capture: capture,
-        cameraMetadata: nil,
-        videoMetadata: nil,
-        motionMetadata: nil,
-        intrinsicsMetadata: nil,
-        trackingMetadata: panoramaMetadataSummary(metadataObject),
-        floorplanMetadata: nil,
-        fileMetadata: nil
-      ) {
-        targets.append(prepared)
-      }
+      // `metadata.json` is intentionally not transferred: it contains the internal
+      // `linked_floorplan` key used only to find the tour on-device. The media
+      // package must never carry a floorplan, its project key, or its metadata.
     }
 
     return targets
@@ -4560,6 +4520,9 @@ final class PixcaptureUploadService {
     ) {
       evidence["exif_sanitized"] = sanitizedExif
     }
+    if let provenance = captureEvidenceProvenanceObject(exifLogEntry: exifLogEntry) {
+      evidence["provenance"] = provenance
+    }
 
     evidence["arkit_summary"] = .object([
       "available": .bool(false),
@@ -4573,6 +4536,24 @@ final class PixcaptureUploadService {
       .string("room_plane_geometry")
     ])
     return .object(evidence)
+  }
+
+  private func captureEvidenceProvenanceObject(exifLogEntry: ExifLogEntry?) -> JSONValue? {
+    guard let exifLogEntry else { return nil }
+    var provenance: [String: JSONValue] = [:]
+    if let schemaVersion = exifLogEntry.schemaVersion {
+      provenance["capture_log_schema_version"] = .number(Double(schemaVersion))
+    }
+    appendString(exifLogEntry.pixcaptureVersion, key: "pixcapture_version", to: &provenance)
+    appendString(exifLogEntry.pixcaptureBuild, key: "pixcapture_build", to: &provenance)
+    appendString(exifLogEntry.levelCoordinateSystem, key: "level_coordinate_system", to: &provenance)
+    if let rawPixelFormatType = exifLogEntry.rawPixelFormatType {
+      provenance["raw_pixel_format_type"] = .number(Double(rawPixelFormatType))
+    }
+    appendString(exifLogEntry.rawPixelFormatFourCC, key: "raw_pixel_format_fourcc", to: &provenance)
+    appendString(exifLogEntry.rawCaptureKind, key: "raw_capture_kind", to: &provenance)
+    appendString(exifLogEntry.previewRawDecoderVersion, key: "preview_raw_decoder", to: &provenance)
+    return provenance.isEmpty ? nil : .object(provenance)
   }
 
   private func captureEvidenceCameraObject(

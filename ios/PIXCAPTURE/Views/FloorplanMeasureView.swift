@@ -135,10 +135,22 @@ private struct FloorplanMeasurePoint: Identifiable, Equatable {
 
 struct FloorplanMeasureView: View {
   let projectKey: String?
+  let roomId: String
+  let floorId: String
+  let onSaved: (() -> Void)?
   let onDone: () -> Void
 
-  init(projectKey: String? = nil, onDone: @escaping () -> Void) {
+  init(
+    projectKey: String? = nil,
+    roomId: String = RoomTaxonomy.defaultRoomId,
+    floorId: String = FloorTaxonomy.defaultFloorId,
+    onSaved: (() -> Void)? = nil,
+    onDone: @escaping () -> Void
+  ) {
     self.projectKey = projectKey
+    self.roomId = RoomTaxonomy.normalizedRoomId(roomId)
+    self.floorId = FloorTaxonomy.normalizedFloorId(floorId)
+    self.onSaved = onSaved
     self.onDone = onDone
   }
 
@@ -150,22 +162,22 @@ struct FloorplanMeasureView: View {
   @State private var liveReticleRotationDegrees = 0.0
   @State private var projectedPointsNormalized: [UUID: [Double]] = [:]
   @State private var pointZoom = 1.0
-  @State private var selectedKind: FloorplanMeasurementKind = .lengthA
-  @State private var measurementNote = ""
-  @State private var savedMeasurements: [FloorplanMeasurementRecord] = []
-  @State private var statusText = "Zielpunkt auf eine Kante oder Fläche legen und + drücken."
+  @State private var orthogonalSnap = true
+  @State private var statusText = "Raumecken der Reihe nach anvisieren und mit + setzen."
 
   private var nextPointLabel: String {
-    points.isEmpty ? "A" : "B"
+    String(points.count + 1)
   }
 
-  private var distanceMeters: Double? {
-    guard points.count >= 2 else { return nil }
-    return Double(simd_distance(points[0].worldPositionMeters, points[1].worldPositionMeters))
-  }
-
-  private var measurementLabel: String {
-    selectedKind.title
+  private var measuredPerimeterMeters: Double {
+    guard points.count >= 2 else { return 0 }
+    var total = zip(points, points.dropFirst()).reduce(0.0) { partial, pair in
+      partial + horizontalDistance(pair.0, pair.1)
+    }
+    if points.count >= 3, let first = points.first, let last = points.last {
+      total += horizontalDistance(last, first)
+    }
+    return total
   }
 
   var body: some View {
@@ -183,7 +195,7 @@ struct FloorplanMeasureView: View {
             liveReticleRotationDegrees: $liveReticleRotationDegrees,
             projectedPointsNormalized: $projectedPointsNormalized,
             statusText: $statusText,
-            captureEnabled: points.count < 2
+            captureEnabled: points.count < 24
           )
           .ignoresSafeArea()
           #else
@@ -206,7 +218,6 @@ struct FloorplanMeasureView: View {
         controls(in: proxy)
       }
     }
-    .onAppear(perform: loadSavedMeasurements)
   }
 
   private func controls(in proxy: GeometryProxy) -> some View {
@@ -225,7 +236,7 @@ struct FloorplanMeasureView: View {
     HStack(spacing: 10) {
       measureIconButton(symbol: "xmark", action: onDone)
       VStack(alignment: .leading, spacing: 2) {
-        Text("Messen")
+        Text("Raum ohne LiDAR")
           .font(.system(size: 20, weight: .heavy, design: .rounded))
         Text(statusText)
           .font(.system(size: 11, weight: .bold, design: .rounded))
@@ -252,8 +263,7 @@ struct FloorplanMeasureView: View {
         .lineLimit(1)
         .minimumScaleFactor(0.62)
       Spacer(minLength: 8)
-      pointBadge("A", isSet: points.indices.contains(0))
-      pointBadge("B", isSet: points.indices.contains(1))
+      pointBadge("\(points.count)", isSet: !points.isEmpty)
     }
     .padding(.horizontal, 12)
     .padding(.vertical, 8)
@@ -264,7 +274,7 @@ struct FloorplanMeasureView: View {
 
   private var compactBottomControls: some View {
     VStack(spacing: 8) {
-      if distanceMeters != nil {
+      if points.count >= 3 {
         saveStrip
       }
 
@@ -280,16 +290,16 @@ struct FloorplanMeasureView: View {
         Button {
           addCurrentPoint()
         } label: {
-          Image(systemName: points.count >= 2 ? "plus" : "plus")
+          Image(systemName: "plus")
             .font(.system(size: 46, weight: .medium))
             .foregroundStyle(.white)
             .frame(width: 92, height: 92)
             .background(Color.black.opacity(0.86))
             .clipShape(Circle())
-            .overlay(Circle().stroke(.white.opacity(liveProbePoint == nil && points.count < 2 ? 0.28 : 0.54), lineWidth: 3))
+            .overlay(Circle().stroke(.white.opacity(liveProbePoint == nil ? 0.28 : 0.54), lineWidth: 3))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(points.count >= 2 ? "Neue Messung" : "Punkt \(nextPointLabel) setzen")
+        .accessibilityLabel("Raumecke \(nextPointLabel) setzen")
 
         Spacer()
 
@@ -307,42 +317,20 @@ struct FloorplanMeasureView: View {
 
   private var saveStrip: some View {
     HStack(spacing: 8) {
-      Menu {
-        ForEach(FloorplanMeasurementKind.allCases) { kind in
-          Button {
-            selectedKind = kind
-          } label: {
-            Label(kind.title, systemImage: kind.iconName)
-          }
-        }
-      } label: {
-        Label(measurementLabel, systemImage: selectedKind.iconName)
+      Toggle(isOn: $orthogonalSnap) {
+        Label("90°-Hilfe", systemImage: "angle")
           .font(.system(size: 13, weight: .heavy, design: .rounded))
-          .lineLimit(1)
-          .minimumScaleFactor(0.6)
-          .frame(maxWidth: .infinity, minHeight: 42)
       }
-      .foregroundStyle(.white)
-      .padding(.horizontal, 10)
-      .background(Color.black.opacity(0.56))
-      .clipShape(Capsule())
-
-      TextField("Notiz", text: $measurementNote)
-        .textInputAutocapitalization(.sentences)
-        .font(.system(size: 13, weight: .semibold, design: .rounded))
-        .foregroundStyle(.white)
-        .tint(floorplanMeasureGreen)
-        .frame(maxWidth: .infinity, minHeight: 42)
-        .padding(.horizontal, 12)
-        .background(Color.black.opacity(0.56))
-        .clipShape(Capsule())
+      .toggleStyle(.button)
+      .tint(floorplanMeasureGreen)
 
       Button {
-        saveCurrentMeasurement()
+        saveRoomPolygon()
       } label: {
-        Image(systemName: "tray.and.arrow.down.fill")
-          .font(.system(size: 17, weight: .heavy))
-          .frame(width: 50, height: 42)
+        Label("Raum speichern", systemImage: "checkmark")
+          .font(.system(size: 13, weight: .heavy, design: .rounded))
+          .frame(minHeight: 42)
+          .padding(.horizontal, 12)
       }
       .foregroundStyle(.black.opacity(0.82))
       .background(floorplanMeasureGreen.opacity(projectKey == nil ? 0.42 : 0.96))
@@ -354,19 +342,34 @@ struct FloorplanMeasureView: View {
   private var measurementOverlay: some View {
     GeometryReader { proxy in
       ZStack {
-        if let start = pointScreenPosition(points.first, in: proxy.size),
-           let end = activeEndPosition(in: proxy.size) {
-          FloorplanMeasureLineShape(start: start, end: end)
-            .stroke(.white.opacity(points.count >= 2 ? 0.94 : 0.78), style: StrokeStyle(lineWidth: points.count >= 2 ? 5 : 4, lineCap: .round, dash: points.count >= 2 ? [] : [8, 7]))
-          if let previewDistance = activeDistanceMeters {
+        ForEach(Array(points.indices.dropLast()), id: \.self) { index in
+          if let start = pointScreenPosition(points[index], in: proxy.size),
+             let end = pointScreenPosition(points[index + 1], in: proxy.size) {
+            FloorplanMeasureLineShape(start: start, end: end)
+              .stroke(.white.opacity(0.94), style: StrokeStyle(lineWidth: 5, lineCap: .round))
             midpointLabel(
-              text: distanceLabel(previewDistance),
+              text: distanceLabel(horizontalDistance(points[index], points[index + 1])),
               start: start,
               end: end,
               in: proxy.size,
-              live: points.count < 2
+              live: false
             )
           }
+        }
+
+        if points.count >= 3,
+           let first = pointScreenPosition(points.first, in: proxy.size),
+           let last = pointScreenPosition(points.last, in: proxy.size) {
+          FloorplanMeasureLineShape(start: last, end: first)
+            .stroke(floorplanMeasureGreen.opacity(0.94), style: StrokeStyle(lineWidth: 4, lineCap: .round, dash: [9, 7]))
+        }
+
+        if let lastPoint = points.last,
+           let start = pointScreenPosition(lastPoint, in: proxy.size),
+           let liveProbePoint,
+           let end = pointScreenPosition(liveProbePoint, in: proxy.size) {
+          FloorplanMeasureLineShape(start: start, end: end)
+            .stroke(.white.opacity(0.74), style: StrokeStyle(lineWidth: 4, lineCap: .round, dash: [8, 7]))
         }
 
         ForEach(points) { point in
@@ -401,7 +404,7 @@ struct FloorplanMeasureView: View {
         Circle()
           .fill(hasProbe ? floorplanMeasureGreen : .white.opacity(0.66))
           .frame(width: hasProbe ? 10 : 8, height: hasProbe ? 10 : 8)
-        if !hasProbe && points.count < 2 {
+        if !hasProbe && points.count < 24 {
           Text("3D-Punkt suchen")
             .font(.system(size: 12, weight: .heavy, design: .rounded))
             .foregroundStyle(.white.opacity(0.84))
@@ -415,34 +418,16 @@ struct FloorplanMeasureView: View {
   }
 
   private var resultText: String {
-    if let distanceMeters {
-      return "\(measurementLabel): \(distanceLabel(distanceMeters))"
+    guard !points.isEmpty else { return "Erste Raumecke setzen" }
+    if points.count >= 3 {
+      return "\(points.count) Ecken · Umfang \(distanceLabel(measuredPerimeterMeters))"
     }
-    if let liveDistance = activeDistanceMeters, points.count == 1 {
-      return "Live \(distanceLabel(liveDistance))"
-    }
-    return points.isEmpty ? "Punkt A setzen" : "Punkt B setzen"
-  }
-
-  private var activeDistanceMeters: Double? {
-    if let distanceMeters {
-      return distanceMeters
-    }
-    guard points.count == 1, let liveProbePoint else { return nil }
-    return Double(simd_distance(points[0].worldPositionMeters, liveProbePoint.worldPositionMeters))
-  }
-
-  private func activeEndPosition(in size: CGSize) -> CGPoint? {
-    if points.count >= 2 {
-      return pointScreenPosition(points[1], in: size)
-    }
-    guard points.count == 1, let liveProbePoint else { return nil }
-    return pointScreenPosition(liveProbePoint, in: size)
+    return "\(points.count) von mindestens 3 Ecken"
   }
 
   private func addCurrentPoint() {
-    if points.count >= 2 {
-      resetMeasurement()
+    guard points.count < 24 else {
+      statusText = "Maximal 24 Ecken. Raum jetzt speichern oder eine Ecke zurücknehmen."
       return
     }
     if let liveProbePoint {
@@ -454,14 +439,14 @@ struct FloorplanMeasureView: View {
   }
 
   private func appendPoint(_ rawPoint: FloorplanMeasurePoint) {
-    guard points.count < 2 else { return }
+    guard points.count < 24 else { return }
     let point = rawPoint.withLabel(nextPointLabel)
     points.append(point)
     liveProbePoint = nil
-    if points.count == 2, let distanceMeters {
-      statusText = "Messung gesetzt: \(distanceLabel(distanceMeters)). Typ wählen und speichern."
+    if points.count >= 3 {
+      statusText = "\(points.count) Ecken gesetzt. Weitere Ecke setzen oder Raum schließen."
     } else {
-      statusText = "Punkt A gesetzt. Jetzt Punkt B setzen."
+      statusText = "Ecke \(points.count) gesetzt. Mindestens \(3 - points.count) weitere."
     }
     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
   }
@@ -469,7 +454,7 @@ struct FloorplanMeasureView: View {
   private func undoLastPoint() {
     guard !points.isEmpty else { return }
     points.removeLast()
-    statusText = points.isEmpty ? "Punkt A setzen." : "Punkt B setzen."
+    statusText = points.isEmpty ? "Erste Raumecke setzen." : "Ecke \(points.count + 1) setzen."
   }
 
   private func resetMeasurement() {
@@ -479,38 +464,106 @@ struct FloorplanMeasureView: View {
     liveReticlePositionNormalized = [0.5, 0.5]
     liveReticleAspect = 1.0
     liveReticleRotationDegrees = 0.0
-    statusText = "Neue Messung: Punkt A setzen."
+    statusText = "Neue Raumkontur: erste Ecke setzen."
   }
 
-  private func loadSavedMeasurements() {
-    guard let projectKey else { return }
-    savedMeasurements = (try? FloorplanProjectStore.loadMeasurements(projectKey: projectKey)) ?? []
-  }
-
-  private func saveCurrentMeasurement() {
-    guard let projectKey, points.count >= 2, let distanceMeters else {
-      statusText = "Erst A und B setzen."
+  private func saveRoomPolygon() {
+    guard let projectKey, points.count >= 3 else {
+      statusText = "Mindestens drei Raumecken setzen."
       return
     }
-    let record = FloorplanMeasurementRecord(
-      id: UUID(),
-      createdAt: Date(),
-      projectKey: projectKey,
-      kind: selectedKind,
-      label: measurementLabel,
-      note: measurementNote.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
-      distanceMeters: distanceMeters,
-      pointAWorldMeters: points[0].worldArray,
-      pointBWorldMeters: points[1].worldArray
-    )
     do {
-      try FloorplanProjectStore.appendMeasurement(projectKey: projectKey, record: record)
-      savedMeasurements = try FloorplanProjectStore.loadMeasurements(projectKey: projectKey)
-      statusText = "\(record.label) gespeichert: \(distanceLabel(distanceMeters))."
+      var polygon = points.map {
+        FloorplanPoint2D(x: -Double($0.worldPositionMeters.x), y: Double($0.worldPositionMeters.z))
+      }
+      if orthogonalSnap {
+        polygon = orthogonallySnapped(polygon)
+      }
+      let minX = polygon.map(\.x).min() ?? 0
+      let minY = polygon.map(\.y).min() ?? 0
+      let localPolygon = polygon.map { FloorplanPoint2D(x: $0.x - minX, y: $0.y - minY) }
+      let segments = FloorplanPolygonGeometry.segments(forClosedPolygon: localPolygon)
+      let evaluation = FloorplanPolygonGeometry.evaluate(segments: segments)
+      guard evaluation.metrics.areaMethod == .closedPolygon,
+            evaluation.metrics.areaSqmApprox >= 0.10,
+            segments.allSatisfy({ hypot($0.bx - $0.ax, $0.by - $0.ay) >= 0.12 }) else {
+        statusText = "Kontur nicht plausibel. Ecken prüfen oder zu kurze Kante zurücknehmen."
+        return
+      }
+
+      let scanId = UUID()
+      let outputPaths = try FloorplanProjectStore.roomScanOutputPaths(projectKey: projectKey, scanId: scanId)
+      let segmentsFile = FloorplanSegmentsFile(
+        version: 8,
+        segments: segments,
+        metrics: evaluation.metrics,
+        trackingSessionId: "manual-corners-\(scanId.uuidString.lowercased())",
+        trackingSource: .manualCornersSharedWorld,
+        worldOffsetX: minX,
+        worldOffsetY: minY,
+        worldRotationRadians: 0
+      )
+      try RoomPlanFloorplanRenderer.writeSegmentsFile(segmentsFile, to: outputPaths.segmentsJSON)
+      try RoomPlanFloorplanRenderer.renderPNG(segmentsFile: segmentsFile, outputURL: outputPaths.floorplanPNG)
+
+      var project = try FloorplanProjectStore.loadOrCreate(projectKey: projectKey)
+      let gap = 1.0
+      let offsetX = project.roomScans.reduce(0.0) { $0 + $1.metrics.widthMeters + gap }
+      project.roomScans.append(
+        FloorplanRoomScan(
+          id: scanId,
+          roomId: roomId,
+          floorId: floorId,
+          createdAt: Date(),
+          usdzPath: "rooms/\(scanId.uuidString)/scan.usdz",
+          floorplanPNGPath: "rooms/\(scanId.uuidString)/floorplan.png",
+          segmentsJSONPath: "rooms/\(scanId.uuidString)/segments.json",
+          metrics: evaluation.metrics,
+          transform: FloorplanRoomTransform(translationX: offsetX, translationY: 0, rotationRadians: 0)
+        )
+      )
+      try FloorplanProjectStore.save(project: project)
+      statusText = "Raumgrundriss gespeichert."
       UIImpactFeedbackGenerator(style: .light).impactOccurred()
+      onSaved?()
+      onDone()
     } catch {
-      statusText = "Messung ok, Speichern fehlgeschlagen."
+      statusText = "Raum konnte nicht gespeichert werden: \(error.localizedDescription)"
     }
+  }
+
+  private func orthogonallySnapped(_ input: [FloorplanPoint2D]) -> [FloorplanPoint2D] {
+    guard input.count >= 2 else { return input }
+    var output = [input[0]]
+    for point in input.dropFirst() {
+      let previous = output[output.count - 1]
+      let dx = point.x - previous.x
+      let dy = point.y - previous.y
+      if abs(dx) >= abs(dy) * 2 {
+        output.append(FloorplanPoint2D(x: point.x, y: previous.y))
+      } else if abs(dy) >= abs(dx) * 2 {
+        output.append(FloorplanPoint2D(x: previous.x, y: point.y))
+      } else {
+        output.append(point)
+      }
+    }
+    if output.count >= 3, let first = output.first, let last = output.last {
+      let dx = first.x - last.x
+      let dy = first.y - last.y
+      if abs(dx) >= abs(dy) * 2 {
+        output[output.count - 1].y = first.y
+      } else if abs(dy) >= abs(dx) * 2 {
+        output[output.count - 1].x = first.x
+      }
+    }
+    return output
+  }
+
+  private func horizontalDistance(_ lhs: FloorplanMeasurePoint, _ rhs: FloorplanMeasurePoint) -> Double {
+    hypot(
+      Double(rhs.worldPositionMeters.x - lhs.worldPositionMeters.x),
+      Double(rhs.worldPositionMeters.z - lhs.worldPositionMeters.z)
+    )
   }
 
   private func pointScreenPosition(_ point: FloorplanMeasurePoint?, in size: CGSize) -> CGPoint? {
@@ -571,22 +624,6 @@ struct FloorplanMeasureView: View {
       return "\(String(format: "%.1f", centimeters)) cm"
     }
     return "\(String(format: "%.2f", meters)) m"
-  }
-}
-
-private extension FloorplanMeasurePoint {
-  var worldArray: [Double] {
-    [
-      Double(worldPositionMeters.x),
-      Double(worldPositionMeters.y),
-      Double(worldPositionMeters.z)
-    ]
-  }
-}
-
-private extension String {
-  var nilIfEmpty: String? {
-    isEmpty ? nil : self
   }
 }
 

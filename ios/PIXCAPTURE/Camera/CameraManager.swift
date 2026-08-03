@@ -127,8 +127,37 @@ enum ActivePhotoFormatSelector {
 }
 
 enum RawPixelFormatSelector {
-  static func preferredSensorRawPixelFormatType(in rawTypes: [OSType]) -> OSType? {
-    rawTypes.first
+  static func preferredSensorRawPixelFormatType(
+    in rawTypes: [OSType],
+    isBayer: (OSType) -> Bool = AVCapturePhotoOutput.isBayerRAWPixelFormat,
+    isAppleProRAW: (OSType) -> Bool = AVCapturePhotoOutput.isAppleProRAWPixelFormat
+  ) -> OSType? {
+    if let bayer = rawTypes.first(where: isBayer) {
+      return bayer
+    }
+    return rawTypes.first(where: { !isAppleProRAW($0) }) ?? rawTypes.first
+  }
+}
+
+enum RawCaptureProvenance {
+  static func kind(
+    for rawType: OSType?,
+    isBayer: (OSType) -> Bool = AVCapturePhotoOutput.isBayerRAWPixelFormat,
+    isAppleProRAW: (OSType) -> Bool = AVCapturePhotoOutput.isAppleProRAWPixelFormat
+  ) -> String {
+    guard let rawType else { return "none" }
+    if isBayer(rawType) { return "bayer" }
+    if isAppleProRAW(rawType) { return "apple_proraw" }
+    return "other_raw"
+  }
+
+  static func fourCC(for rawType: OSType?) -> String? {
+    guard let rawType else { return nil }
+    let bytes: [UInt8] = [24, 16, 8, 0].map { UInt8((rawType >> OSType($0)) & 0xff) }
+    guard bytes.allSatisfy({ $0 >= 32 && $0 <= 126 }) else {
+      return String(format: "0x%08X", rawType)
+    }
+    return String(bytes: bytes, encoding: .ascii)
   }
 }
 
@@ -882,10 +911,7 @@ final class CameraManager: NSObject, ObservableObject {
 
   private func syncPhotoOutputConfiguration(for format: AVCaptureDevice.Format) {
     let supportedDimensions = format.supportedMaxPhotoDimensions
-    let classicDNGDimensions = supportedDimensions.first {
-      $0.width == 4032 && $0.height == 3024
-    }
-    if let preferredDimensions = classicDNGDimensions ?? Self.preferredMaxPhotoDimensions(from: supportedDimensions) {
+    if let preferredDimensions = Self.preferredMaxPhotoDimensions(from: supportedDimensions) {
       photoOutput.maxPhotoDimensions = preferredDimensions
     }
     // Dark-room captures request higher quality processing, so allow the output
@@ -2071,7 +2097,10 @@ final class CameraManager: NSObject, ObservableObject {
 
     let settingsPlan = buildPhotoSettingsPlan(for: format)
     let settings = settingsPlan.settings
-    settings.photoQualityPrioritization = requestedPhotoQualityPrioritization(for: captureMode)
+    settings.photoQualityPrioritization = requestedPhotoQualityPrioritization(
+      for: captureMode,
+      rawPixelFormatType: settingsPlan.rawPixelFormatType
+    )
     let snapshot = await readCaptureSnapshot(device: device)
     let sensorSnapshot = currentSensorSnapshot()
 
@@ -2127,6 +2156,7 @@ final class CameraManager: NSObject, ObservableObject {
         format: format,
         displayFileExtension: settingsPlan.displayFileExtension,
         expectsRawCompanion: settingsPlan.expectsRawCompanion,
+        rawPixelFormatType: settingsPlan.rawPixelFormatType,
         captureMode: captureMode,
         singleShotAssessment: singleShotAssessment,
         includeInSeriesLog: includeInSeriesLog,
@@ -2153,7 +2183,10 @@ final class CameraManager: NSObject, ObservableObject {
     let captureExifOrientation = exifOrientation(for: orientation)
     let settingsPlan = buildPhotoSettingsPlan(for: format)
     let settings = settingsPlan.settings
-    settings.photoQualityPrioritization = .speed
+    settings.photoQualityPrioritization = requestedPhotoQualityPrioritization(
+      for: captureMode,
+      rawPixelFormatType: settingsPlan.rawPixelFormatType
+    )
     let snapshot = await readCaptureSnapshot(device: device)
     let sensorSnapshot = currentSensorSnapshot()
     let exposureSeconds = max(snapshot.exposureSeconds ?? 0, 0)
@@ -2214,6 +2247,7 @@ final class CameraManager: NSObject, ObservableObject {
         format: format,
         displayFileExtension: settingsPlan.displayFileExtension,
         expectsRawCompanion: settingsPlan.expectsRawCompanion,
+        rawPixelFormatType: settingsPlan.rawPixelFormatType,
         captureMode: captureMode,
         singleShotAssessment: singleShotAssessment,
         includeInSeriesLog: true,
@@ -2383,6 +2417,7 @@ final class CameraManager: NSObject, ObservableObject {
       format: format,
       displayFileExtension: displayFileExtension(for: format),
       expectsRawCompanion: false,
+      rawPixelFormatType: nil,
       captureMode: captureMode,
       singleShotAssessment: singleShotAssessment,
       includeInSeriesLog: true,
@@ -3065,6 +3100,7 @@ private struct PendingCapture {
   let format: PhotoFormat
   let displayFileExtension: String
   let expectsRawCompanion: Bool
+  let rawPixelFormatType: OSType?
   let captureMode: PhotoCaptureMode
   let singleShotAssessment: SingleShotCaptureAssessment?
   let includeInSeriesLog: Bool
@@ -3093,6 +3129,7 @@ private struct PhotoSettingsPlan {
   let settings: AVCapturePhotoSettings
   let displayFileExtension: String
   let expectsRawCompanion: Bool
+  let rawPixelFormatType: OSType?
 }
 
 private struct MultiRepresentationCaptureState {
@@ -3410,7 +3447,8 @@ private extension CameraManager {
           let type = CGImageSourceGetType(source) else {
       return nil
     }
-    let properties = (CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]) ?? [:]
+    var properties = (CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]) ?? [:]
+    properties[kCGImageDestinationLossyCompressionQuality] = 1.0
 
     let output = NSMutableData()
     guard let destination = CGImageDestinationCreateWithData(output, type, 1, nil) else {
@@ -3580,8 +3618,18 @@ private extension CameraManager {
 
     let meanLuma = calculateMeanLuma(fileURL: fileURL)
     let qualitySnapshot = currentQualityMetadataSnapshot()
+    let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+    let appBuild = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
 
     let entry = ExifLogEntry(
+      schemaVersion: 2,
+      pixcaptureVersion: appVersion,
+      pixcaptureBuild: appBuild,
+      levelCoordinateSystem: "viewport_gravity_v2",
+      rawPixelFormatType: pending.rawPixelFormatType,
+      rawPixelFormatFourCC: RawCaptureProvenance.fourCC(for: pending.rawPixelFormatType),
+      rawCaptureKind: RawCaptureProvenance.kind(for: pending.rawPixelFormatType),
+      previewRawDecoderVersion: pending.rawPixelFormatType == nil ? nil : "system_default_legacy_cifilter",
       fileName: fileURL.lastPathComponent,
       sequenceNumber: pending.sequenceNumber,
       zone: pending.zone,
@@ -3833,7 +3881,8 @@ private extension CameraManager {
       return PhotoSettingsPlan(
         settings: settings,
         displayFileExtension: "jpg",
-        expectsRawCompanion: false
+        expectsRawCompanion: false,
+        rawPixelFormatType: nil
       )
     case .jpeg:
       let settings = AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.jpeg])
@@ -3842,7 +3891,8 @@ private extension CameraManager {
       return PhotoSettingsPlan(
         settings: settings,
         displayFileExtension: "jpg",
-        expectsRawCompanion: false
+        expectsRawCompanion: false,
+        rawPixelFormatType: nil
       )
     case .proRaw:
       if #available(iOS 14.3, *), canUseRaw, let rawType {
@@ -3854,7 +3904,8 @@ private extension CameraManager {
         return PhotoSettingsPlan(
           settings: settings,
           displayFileExtension: displayFileExtension,
-          expectsRawCompanion: true
+          expectsRawCompanion: true,
+          rawPixelFormatType: rawType
         )
       }
       DispatchQueue.main.async {
@@ -3866,14 +3917,21 @@ private extension CameraManager {
       return PhotoSettingsPlan(
         settings: settings,
         displayFileExtension: "jpg",
-        expectsRawCompanion: false
+        expectsRawCompanion: false,
+        rawPixelFormatType: nil
       )
     }
   }
 
   private func requestedPhotoQualityPrioritization(
-    for captureMode: PhotoCaptureMode
+    for captureMode: PhotoCaptureMode,
+    rawPixelFormatType: OSType?
   ) -> AVCapturePhotoOutput.QualityPrioritization {
+    if let rawPixelFormatType,
+       AVCapturePhotoOutput.isAppleProRAWPixelFormat(rawPixelFormatType),
+       photoOutput.maxPhotoQualityPrioritization != .speed {
+      return .balanced
+    }
     if captureMode != .darkRoom {
       return .speed
     }
@@ -3956,6 +4014,9 @@ private extension CameraManager {
     }
     let flattened = makeOpaqueCGImageIfNeeded(cgImage)
     var updatedProperties = properties
+    if outputFormat != .proRaw {
+      updatedProperties[kCGImageDestinationLossyCompressionQuality] = 1.0
+    }
     updatedProperties[kCGImagePropertyOrientation] = 1
     updatedProperties[kCGImagePropertyPixelWidth] = flattened.width
     updatedProperties[kCGImagePropertyPixelHeight] = flattened.height
@@ -3992,6 +4053,7 @@ private extension CameraManager {
 
     let flattened = makeOpaqueCGImageIfNeeded(cgImage)
     var updatedProperties = properties
+    updatedProperties[kCGImageDestinationLossyCompressionQuality] = 1.0
     updatedProperties[kCGImagePropertyOrientation] = 1
     updatedProperties[kCGImagePropertyPixelWidth] = flattened.width
     updatedProperties[kCGImagePropertyPixelHeight] = flattened.height
@@ -4628,6 +4690,7 @@ extension CameraManager: AVCapturePhotoCaptureDelegate {
         format: bracket.format,
         displayFileExtension: displayFileExtension(for: bracket.format),
         expectsRawCompanion: false,
+        rawPixelFormatType: nil,
         captureMode: .standardBracket,
         singleShotAssessment: nil,
         includeInSeriesLog: true,

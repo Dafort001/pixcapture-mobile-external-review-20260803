@@ -8,7 +8,7 @@ enum FloorplanComposerRenderer {
     let metricsText: String
   }
 
-  struct ExportMetadata {
+  private struct ExportMetadata {
     let projectKey: String
     let projectName: String
     let jobId: String
@@ -32,28 +32,20 @@ enum FloorplanComposerRenderer {
 
     var headlineText: String {
       String(
-        format: "GESAMTFLÄCHE: %.2f m²   ·   WOHNFLÄCHE: %.2f m²   ·   RÄUME: %d",
-        max(totalArea, 0),
-        max(livingArea, 0),
-        max(roomCount, 0)
-      )
-    }
-
-    var sublineText: String {
-      String(
-        format: "Wohnfläche nach WoFlV (ca.)   ·   Umfang gesamt: %.1f m   ·   Wegpunkte: %d",
-        max(totalPerimeter, 0),
+        format: "BEMASSTER GRUNDRISS   ·   RÄUME: %d   ·   WEGPUNKTE: %d",
+        max(roomCount, 0),
         max(routePointCount, 0)
       )
     }
 
+    var sublineText: String {
+      "Maßangaben dienen der Grundrissdarstellung · keine Wohnflächenberechnung"
+    }
+
     var exportText: String {
       String(
-        format: "Gesamtfläche: %.2f m² | Wohnfläche (WoFlV ca.): %.2f m² | Räume: %d | Umfang: %.1f m | Wegpunkte: %d",
-        max(totalArea, 0),
-        max(livingArea, 0),
+        format: "Bemaßter Grundriss | Räume: %d | Wegpunkte: %d | keine Wohnflächenberechnung",
         max(roomCount, 0),
-        max(totalPerimeter, 0),
         max(routePointCount, 0)
       )
     }
@@ -62,17 +54,9 @@ enum FloorplanComposerRenderer {
   static func exportCombinedFloorplan(
     project: FloorplanProject,
     outputPNG: URL,
-    outputPDF: URL,
     outputVisualPDF: URL,
-    outputDataPDF: URL,
-    outputDataCSV: URL,
-    outputSummaryCSV: URL,
-    outputRoomsCSV: URL,
-    outputCRMPropertyCSV: URL,
-    outputCRMRoomsCSV: URL,
-    outputOpenImmoXML: URL,
+    legacyOutputURLs: [URL],
     exportTitle: String,
-    exportMetadata: ExportMetadata,
     resolveURL: (String) throws -> URL
   ) throws -> CombinedResult {
     let resolvedProject = FloorplanLayoutResolver.normalizedProject(project: project) { scan in
@@ -88,8 +72,6 @@ enum FloorplanComposerRenderer {
     let stats = buildStats(project: resolvedProject, rooms: rooms)
     let metricsText = stats.exportText
     let routePoints = resolvedProject.routePoints.map { DPoint(x: $0.x, y: $0.y) }
-    let roomReportEntries = buildRoomReportEntries(rooms: rooms)
-
     // PNG
     try renderPNG(
       rooms: rooms,
@@ -100,18 +82,8 @@ enum FloorplanComposerRenderer {
       headerStats: stats
     )
 
-    // Combined PDF (plan + semantic data pages)
-    try renderCombinedPDF(
-      rooms: rooms,
-      routePoints: routePoints,
-      stairConnections: resolvedProject.stairConnections,
-      outputURL: outputPDF,
-      title: exportTitle,
-      headerStats: stats,
-      roomReportEntries: roomReportEntries
-    )
-
-    // Visual-only PDF for separate mail delivery.
+    // The public handoff contains only a measured drawing. Area calculations,
+    // WoFlV, job/address data and CRM/OpenImmo payloads remain outside it.
     try renderPlanPDF(
       rooms: rooms,
       routePoints: routePoints,
@@ -121,73 +93,11 @@ enum FloorplanComposerRenderer {
       headerStats: stats
     )
 
-    // Semantic data PDF for teams that only need numbers and room breakdowns.
-    try renderDataPDF(
-      roomReportEntries: roomReportEntries,
-      outputURL: outputDataPDF,
-      title: exportTitle,
-      headerStats: stats
-    )
+    for legacyURL in legacyOutputURLs where FileManager.default.fileExists(atPath: legacyURL.path) {
+      try FileManager.default.removeItem(at: legacyURL)
+    }
 
-    // General CSV for quick spreadsheet access.
-    try renderDataCSV(
-      roomReportEntries: roomReportEntries,
-      outputURL: outputDataCSV,
-      metadata: exportMetadata,
-      headerStats: stats
-    )
-
-    // Summary CSV for brokers and back-office handoff.
-    try renderSummaryCSV(
-      roomReportEntries: roomReportEntries,
-      outputURL: outputSummaryCSV,
-      metadata: exportMetadata,
-      headerStats: stats
-    )
-
-    // Room list CSV with one room per row.
-    try renderRoomsCSV(
-      roomReportEntries: roomReportEntries,
-      outputURL: outputRoomsCSV,
-      metadata: exportMetadata,
-      headerStats: stats
-    )
-
-    // CRM imports in both property-level and room-level form.
-    try renderCRMPropertyCSV(
-      roomReportEntries: roomReportEntries,
-      outputURL: outputCRMPropertyCSV,
-      metadata: exportMetadata,
-      headerStats: stats
-    )
-
-    try renderCRMRoomsCSV(
-      roomReportEntries: roomReportEntries,
-      outputURL: outputCRMRoomsCSV,
-      metadata: exportMetadata,
-      headerStats: stats
-    )
-
-    // OpenImmo XML as the broadest common denominator for major real-estate CRMs.
-    try renderOpenImmoXML(
-      roomReportEntries: roomReportEntries,
-      outputURL: outputOpenImmoXML,
-      metadata: exportMetadata,
-      headerStats: stats,
-      referencedFileNames: [
-        outputPDF.lastPathComponent,
-        outputVisualPDF.lastPathComponent,
-        outputDataPDF.lastPathComponent,
-        outputPNG.lastPathComponent,
-        outputDataCSV.lastPathComponent,
-        outputSummaryCSV.lastPathComponent,
-        outputRoomsCSV.lastPathComponent,
-        outputCRMPropertyCSV.lastPathComponent,
-        outputCRMRoomsCSV.lastPathComponent
-      ]
-    )
-
-    return CombinedResult(pngURL: outputPNG, pdfURL: outputPDF, metricsText: metricsText)
+    return CombinedResult(pngURL: outputPNG, pdfURL: outputVisualPDF, metricsText: metricsText)
   }
 
   struct RoomSegments {

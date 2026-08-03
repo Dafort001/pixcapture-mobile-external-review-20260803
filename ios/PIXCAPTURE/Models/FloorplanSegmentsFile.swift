@@ -3,6 +3,7 @@ import Foundation
 enum FloorplanTrackingSource: String, Codable, Hashable {
   case floorScanSharedWorld = "floor_scan_shared_world"
   case roomSequenceSharedWorld = "room_sequence_shared_world"
+  case manualCornersSharedWorld = "manual_corners_shared_world"
 }
 
 struct FloorplanSegmentsFile: Codable, Hashable {

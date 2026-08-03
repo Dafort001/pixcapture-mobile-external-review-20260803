@@ -8,6 +8,11 @@ import RoomPlan
 struct FloorplanWorkflowView: View {
   var onNavigate: (AppScreen) -> Void
 
+  private enum DeferredPresentation {
+    case scanTips
+    case roomPlan(roomId: String, floorId: String)
+  }
+
   private enum FloorplanTheme {
     static let primary = Color(red: 42.0 / 255.0, green: 63.0 / 255.0, blue: 104.0 / 255.0)
     static let secondary = Color(red: 108.0 / 255.0, green: 168.0 / 255.0, blue: 200.0 / 255.0)
@@ -59,6 +64,7 @@ struct FloorplanWorkflowView: View {
   @State private var roomSequenceTrackingProjectKey: String? = nil
   @State private var roomSequenceTrackingFloorId: String? = nil
   @State private var roomSequenceTrackingSessionId: String? = nil
+  @State private var deferredPresentation: DeferredPresentation? = nil
 
   private var projectKey: String? {
     let trimmed = settings.selectedJobId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -198,7 +204,7 @@ struct FloorplanWorkflowView: View {
       .environmentObject(authService)
       .environmentObject(settings)
     }
-    .sheet(isPresented: $isScanSetupPresented) {
+    .sheet(isPresented: $isScanSetupPresented, onDismiss: presentDeferredDestination) {
       RoomPickerView(
         selectedRoomId: $scanSetupRoomId,
         selectedFloorId: $scanSetupFloorId,
@@ -207,21 +213,20 @@ struct FloorplanWorkflowView: View {
         }
       )
     }
-    .fullScreenCover(isPresented: $isScanTipsPresented) {
+    .fullScreenCover(isPresented: $isScanTipsPresented, onDismiss: presentDeferredDestination) {
       RoomPlanScanTipsView(
         roomName: RoomTaxonomy.room(id: pendingScanRoomId).displayName,
         floorName: FloorTaxonomy.floor(id: pendingScanFloorId).shortDisplayName,
         onCancel: {
+          deferredPresentation = nil
           isScanTipsPresented = false
         },
         onStart: {
           markScanTipsSeenForProject()
-          isScanTipsPresented = false
           let roomId = pendingScanRoomId
           let floorId = pendingScanFloorId
-          scheduleNextPresentation {
-            startNewScanNow(roomId: roomId, floorId: floorId)
-          }
+          deferredPresentation = .roomPlan(roomId: roomId, floorId: floorId)
+          isScanTipsPresented = false
         }
       )
       .interactiveDismissDisabled(true)
@@ -260,9 +265,7 @@ struct FloorplanWorkflowView: View {
             lastSavedScanLabel = "\(RoomTaxonomy.room(id: finishedRoomId).displayName) · \(FloorTaxonomy.floor(id: finishedFloorId).shortDisplayName)"
             Task { @MainActor in
               await addScanToProject(scanId: scanId, roomId: finishedRoomId, floorId: finishedFloorId)
-              scheduleNextPresentation {
-                showContinueScanAlert = true
-              }
+              showContinueScanAlert = true
             }
           }
         )
@@ -298,9 +301,13 @@ struct FloorplanWorkflowView: View {
       }
     }
     .fullScreenCover(isPresented: $isMeasurePresented) {
-      FloorplanMeasureView(projectKey: projectKey) {
-        isMeasurePresented = false
-      }
+      FloorplanMeasureView(
+        projectKey: projectKey,
+        roomId: pendingScanRoomId,
+        floorId: pendingScanFloorId,
+        onSaved: loadProject,
+        onDone: { isMeasurePresented = false }
+      )
     }
     .sheet(isPresented: $showShareSheet, onDismiss: cleanupShareStagingDirectory) {
       ShareSheet(
@@ -569,7 +576,7 @@ struct FloorplanWorkflowView: View {
         Button {
           isMeasurePresented = true
         } label: {
-          Label("Messen", systemImage: "ruler")
+          Label("Raum ohne LiDAR erfassen", systemImage: "ruler")
         }
         Button(l10n("floorplan.actions.floorScanBeta")) {
           beginFloorScan()
@@ -737,7 +744,7 @@ struct FloorplanWorkflowView: View {
         Button {
           isMeasurePresented = true
         } label: {
-          Label("Messen", systemImage: "ruler")
+          Label("Raum ohne LiDAR erfassen", systemImage: "ruler")
         }
         Button("Etage scannen") {
           beginFloorScan()
@@ -778,13 +785,16 @@ struct FloorplanWorkflowView: View {
     let perim = String(format: "%.1f", metrics.perimeterMeters)
     let width = String(format: "%.1f", metrics.widthMeters)
     let depth = String(format: "%.1f", metrics.depthMeters)
+    let areaLabel = metrics.areaMethod == .convexHullFallback
+      ? "Geometriefläche unsicher"
+      : "Geometriefläche"
 
     return HStack(spacing: 10) {
       VStack(alignment: .leading, spacing: 2) {
         Text("\(roomName) · \(floorName)")
           .font(.system(size: 12, weight: .semibold))
           .foregroundStyle(Color.black.opacity(0.82))
-        Text("Fläche ca.: \(area) m² · Umfang: \(perim) m")
+        Text("\(areaLabel): \(area) m² · Wandlängen gesamt: \(perim) m")
           .font(.system(size: 11))
           .foregroundStyle(Color.black.opacity(0.55))
         Text("Breite: \(width) m · Tiefe: \(depth) m")
@@ -829,11 +839,11 @@ struct FloorplanWorkflowView: View {
     let exportDisabled = project?.roomScans.isEmpty ?? true
 
     return VStack(alignment: .leading, spacing: 10) {
-      Text("3. Export (PNG / PDF / CSV)")
+      Text("3. Grundriss-Export (PNG / PDF)")
         .font(.system(size: 13, weight: .semibold))
         .foregroundStyle(Color.black.opacity(0.82))
 
-      Text("Erzeugt ein gemeinsames Exportpaket mit Plan, Datenblatt, OpenImmo, CSV-Listen und PNG. Beim naechsten Uploadlauf fuer diesen Job werden die Grundriss-Artefakte als Job-Dateien mit vorbereitet.")
+      Text("Erzeugt ausschließlich den bemaßten Plan als PNG und PDF. Wohnfläche, WoFlV, Adresse, Jobdaten und Foto-Uploads bleiben strikt getrennt.")
         .font(.system(size: 12))
         .foregroundStyle(Color.black.opacity(0.6))
         .fixedSize(horizontal: false, vertical: true)
@@ -931,9 +941,7 @@ struct FloorplanWorkflowView: View {
             withAnimation(.easeInOut(duration: 0.18)) {
               showContinueScanAlert = false
             }
-            scheduleNextPresentation {
-              beginNewScan()
-            }
+            beginNewScan()
           } label: {
               Text("Weiteren Raum scannen")
                 .font(.system(size: 15, weight: .semibold))
@@ -1084,22 +1092,22 @@ struct FloorplanWorkflowView: View {
     settings.selectedRoomId = pendingScanRoomId
     settings.selectedFloorId = pendingScanFloorId
     if shouldShowScanTipsForProject() {
-      scheduleNextPresentation {
-        isScanTipsPresented = true
-      }
+      deferredPresentation = .scanTips
     } else {
       let roomId = pendingScanRoomId
       let floorId = pendingScanFloorId
-      scheduleNextPresentation {
-        startNewScanNow(roomId: roomId, floorId: floorId)
-      }
+      deferredPresentation = .roomPlan(roomId: roomId, floorId: floorId)
     }
   }
 
-  private func scheduleNextPresentation(_ action: @escaping () -> Void) {
-    // Wait one run-loop + a small delay so the previous sheet can dismiss cleanly.
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-      action()
+  private func presentDeferredDestination() {
+    guard let destination = deferredPresentation else { return }
+    deferredPresentation = nil
+    switch destination {
+    case .scanTips:
+      isScanTipsPresented = true
+    case .roomPlan(let roomId, let floorId):
+      startNewScanNow(roomId: roomId, floorId: floorId)
     }
   }
 
@@ -1415,7 +1423,6 @@ struct FloorplanWorkflowView: View {
     let fm = FileManager.default
     hasFinalizedExportArtifacts =
       fm.fileExists(atPath: paths.visualPDF.path) ||
-      fm.fileExists(atPath: paths.combinedPDF.path) ||
       fm.fileExists(atPath: paths.combinedPNG.path)
   }
 
@@ -1740,11 +1747,11 @@ struct FloorplanWorkflowView: View {
   }
 
   private func combinedExportSubject(projectName: String) -> String {
-    "PIXCAPTURE Grundriss \(projectName)"
+    "PIXCAPTURE Grundriss"
   }
 
   private func combinedExportMessage(projectName: String) -> String {
-    "Im Anhang befinden sich der Grundriss, das Datenblatt, OpenImmo und die CSV-/CRM-Dateien fuer \(projectName)."
+    "Im Anhang befinden sich der bemaßte Grundriss als PNG und PDF. Der Export enthält keine Wohnflächenberechnung."
   }
 
   private func combinedExportAttachmentURLs(from paths: FloorplanProjectPaths) -> [URL] {
@@ -1890,28 +1897,12 @@ struct FloorplanWorkflowView: View {
     }
 
     let paths = try FloorplanProjectStore.projectPaths(projectKey: projectKey)
-    let exportMetadata = FloorplanComposerRenderer.ExportMetadata(
-      projectKey: project.projectKey,
-      projectName: exportDisplayName,
-      jobId: settings.selectedJobId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
-      jobAddress: settings.jobAddress.trimmingCharacters(in: .whitespacesAndNewlines),
-      projectCreatedAt: project.createdAt,
-      generatedAt: Date()
-    )
     let result = try FloorplanComposerRenderer.exportCombinedFloorplan(
       project: project,
       outputPNG: paths.combinedPNG,
-      outputPDF: paths.combinedPDF,
       outputVisualPDF: paths.visualPDF,
-      outputDataPDF: paths.dataPDF,
-      outputDataCSV: paths.dataCSV,
-      outputSummaryCSV: paths.summaryCSV,
-      outputRoomsCSV: paths.roomsCSV,
-      outputCRMPropertyCSV: paths.crmPropertyCSV,
-      outputCRMRoomsCSV: paths.crmRoomsCSV,
-      outputOpenImmoXML: paths.openImmoXML,
-      exportTitle: exportDisplayName,
-      exportMetadata: exportMetadata,
+      legacyOutputURLs: FloorplanProjectStore.legacyExportURLs(paths: paths),
+      exportTitle: "PIXCAPTURE Grundriss",
       resolveURL: { rel in try FloorplanProjectStore.resolve(projectKey: projectKey, relativePath: rel) }
     )
     return GeneratedExportArtifacts(paths: paths, result: result)

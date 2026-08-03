@@ -173,26 +173,20 @@ enum FloorplanProjectStore {
   }
 
   static func finalExportURLs(paths: FloorplanProjectPaths) -> [URL] {
-    [
-      paths.combinedPDF,
-      paths.combinedPNG,
-      paths.visualPDF,
-      paths.dataPDF,
-      paths.openImmoXML,
-      paths.dataCSV,
-      paths.summaryCSV,
-      paths.roomsCSV,
-      paths.crmPropertyCSV,
-      paths.crmRoomsCSV
-    ]
+    [paths.combinedPNG, paths.visualPDF]
   }
 
   static func visualExportURLs(paths: FloorplanProjectPaths) -> [URL] {
-    [paths.combinedPDF, paths.combinedPNG, paths.visualPDF]
+    finalExportURLs(paths: paths)
   }
 
   static func dataExportURLs(paths: FloorplanProjectPaths) -> [URL] {
+    []
+  }
+
+  static func legacyExportURLs(paths: FloorplanProjectPaths) -> [URL] {
     [
+      paths.combinedPDF,
       paths.dataPDF,
       paths.openImmoXML,
       paths.summaryCSV,
@@ -219,6 +213,12 @@ enum FloorplanProjectStore {
     try ensureDirectory(exportRoot)
 
     let fm = FileManager.default
+    for legacyURL in legacyExportURLs(paths: paths) {
+      let staleTarget = exportRoot.appendingPathComponent(legacyURL.lastPathComponent)
+      if fm.fileExists(atPath: staleTarget.path) {
+        try fm.removeItem(at: staleTarget)
+      }
+    }
     var copied: [URL] = []
     for sourceURL in existingFiles(from: finalExportURLs(paths: paths)) {
       let targetURL = exportRoot.appendingPathComponent(sourceURL.lastPathComponent)

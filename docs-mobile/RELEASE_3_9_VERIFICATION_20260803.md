@@ -16,9 +16,10 @@ Build ersetzt keinen realen Geräte- oder Übertragungstest.
   als unterstützte iPhone-Ausrichtungen.
 - [x] App-Store-3.8-Fehler anhand Daniels Screenshots reproduziert: Portrait
   `R 0,0° / P 1,2°`, Landscape in gleicher Lage `R -89,8° / P 0,7°`.
-- [x] 74 Unit-/Integrations-/Logiktests erfolgreich, einschließlich neuer
+- [x] 82 Unit-/Integrations-/Logiktests erfolgreich, einschließlich neuer
   Level-/Querformat-, Browser-ACK-, Companion-Receipt-, Kontrast- und
-  SMS-Aktivierungstests in Deutsch und Englisch.
+  SMS-Aktivierungstests in Deutsch und Englisch sowie RAW-Auswahl,
+  Polygongeometrie, Exporttrennung und EXIF-Rückwärtskompatibilität.
 - [x] Gezielter Erststart-UI-Test erfolgreich: Ohne Anmeldung bis zum lokalen
   Startbildschirm; keine Kamera-Berechtigungsabfrage vor der bewussten
   Kamerawahl; vollständiger Textbereich bis zur letzten Aktion scrollbar und
@@ -41,6 +42,22 @@ Build ersetzt keinen realen Geräte- oder Übertragungstest.
 - [x] Signierter Debug-Build für Daniels verbundenes iPhone 15 Pro Max
   erfolgreich; bewusst noch nicht installiert, damit dessen Kundendaten nicht
   berührt werden.
+- [x] Foto-/Video-/Panorama-Uploadpakete enthalten keine Grundrissdateien mehr.
+  Interne Panorama-Zuordnungsmetadaten werden nicht mit übertragen.
+- [x] Der freigebbare Grundriss besteht nur noch aus bemaßtem PNG und visuellem
+  PDF. Wohnfläche, WoFlV, Job/Adresse, Daten-PDF, CSV/CRM und OpenImmo werden
+  weder neu erzeugt noch geteilt; vorhandene Altartefakte werden entfernt.
+- [x] RAW-Auswahl bevorzugt explizit Sensor-Bayer vor Apple ProRAW. Aufnahme-
+  und Uploadnachweise protokollieren Schema, App-Version/Build,
+  Nivellierungs-Koordinatensystem, RAW-Typ und FourCC.
+- [x] RoomPlan-, manuell erfasste und im Composer geänderte Konturen verwenden
+  dieselbe Polygonmetrik. Ein notwendiger Convex-Hull-Fallback ist als
+  unsicher gekennzeichnet statt als exakte Raumfläche ausgegeben.
+- [x] Der Nicht-LiDAR-Weg speichert jetzt geschlossene Raumkonturen aus 3–24
+  AR-Messpunkten mit Plausibilitätsprüfung und optionaler 90°-Hilfe als normal
+  weiterbearbeitbaren Raumscan.
+- [x] Die Scanfolge wartet auf das tatsächliche Schließen des Sheets/Covers;
+  der bisherige starre 0,2-Sekunden-Präsentationstimer ist entfernt.
 
 ## Noch nicht als produktionsreif nachgewiesen
 
@@ -59,6 +76,9 @@ Build ersetzt keinen realen Geräte- oder Übertragungstest.
   sechs bekannte Warnungen im historisch gewachsenen `CameraManager`; deren
   strukturelle Actor-Isolation ist eine eigene, realgerätepflichtige Arbeit
   und wurde nicht mit `nonisolated(unsafe)` kaschiert.
+- Grundriss-Polygonaufnahme ohne LiDAR, 90°-Hilfe und anschließende Bearbeitung
+  sind im Simulator nur logisch/buildseitig prüfbar und müssen auf einem
+  echten Gerät mit AR-Tracking gegen reale Maße kontrolliert werden.
 
 ## Pflichtnachweis A – Kamera und Nivellierung auf echtem iPhone
 
@@ -103,6 +123,19 @@ Build ersetzt keinen realen Geräte- oder Übertragungstest.
 - [ ] Zwei Aufträge am selben Tag wechseln; keine falsche Zuordnung.
 - [ ] Lokale Dateizahl, Manifest, Browser/Cloud-Eingang und Jobstatus stimmen
   exakt überein.
+
+## Pflichtnachweis D – Grundriss und Nicht-LiDAR
+
+- [ ] LiDAR-Raum mit rechteckiger und L-förmiger Kontur erfassen; Maße gegen
+  Referenzmessung prüfen und sicherstellen, dass keine Convex-Hull-Überhöhung
+  als exakte Fläche erscheint.
+- [ ] Raum ohne LiDAR mit mindestens vier Ecken erfassen, 90°-Hilfe einmal an
+  und einmal aus prüfen, speichern, im Composer öffnen und erneut sichern.
+- [ ] Grundriss teilen und Inhalt kontrollieren: ausschließlich
+  `floorplan.png` und `floorplan_plan.pdf`, keine Wohnfläche/WoFlV, keine
+  Adresse/Jobkennung, kein Datenblatt, CSV/CRM oder OpenImmo.
+- [ ] Danach Foto-Upload für denselben Job ausführen und Manifest/Paket prüfen:
+  keine Grundrissdatei und kein `linked_floorplan`-Metadatum enthalten.
 
 ## Freigabeprotokoll
 
