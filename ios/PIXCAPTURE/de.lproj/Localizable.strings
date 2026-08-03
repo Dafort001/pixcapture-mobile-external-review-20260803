@@ -152,6 +152,8 @@
 "start.menu.language.title" = "Sprache";
 "start.menu.account.title" = "Abmelden / Benutzer wechseln";
 "start.menu.account.subtitle" = "Sitzung vollständig löschen und neu anmelden.";
+"start.menu.login.title" = "Für Upload anmelden";
+"start.menu.login.subtitle" = "Fotografieren funktioniert offline. Für die Übertragung brauchst du einen freigeschalteten Zugang.";
 "start.menu.help.title" = "Hilfe";
 "start.menu.help.subtitle" = "Erste Schritte und Bedienhinweise öffnen.";
 "start.jobs.sheet.title" = "Jobs verwalten";
@@ -167,7 +169,7 @@
 "root.jobs.sheet.clear" = "Ohne Job fortfahren";
 "help.backToLogin" = "Zurück zur Anmeldung";
 
-"splash.login.info" = "Melde dich mit der E-Mail und dem Passwort an, die du auf PIXCAPTURE.APP bei deiner Registrierung angelegt hast.";
+"splash.login.info" = "Zum Hochladen meldest du dich nach der Freigabe mit deiner E-Mail-Adresse und deinem selbst gewählten Passwort an.";
 "splash.login.emailPlaceholder" = "E-MAIL";
 "splash.login.passwordPlaceholder" = "PASSWORT";
 "splash.login.passwordButton" = "MIT PASSWORT ANMELDEN";
@@ -175,15 +177,32 @@
 "splash.backToStart" = "Zurück zum Start";
 "splash.help.button" = "HILFE & ERSTE SCHRITTE";
 "splash.onboarding.badge" = "EMPFOHLEN";
-"splash.onboarding.title" = "Zuerst auf PIXCAPTURE.APP registrieren";
-"splash.onboarding.step1" = "Erstelle dein Konto auf PIXCAPTURE.APP und warte auf die Freischaltung.";
-"splash.onboarding.step2" = "Melde dich hier mit derselben E-Mail und demselben Passwort an.";
-"splash.onboarding.step3" = "Melde dich mit E-Mail und Passwort an. Der Anmelde-QR ist nur eine alternative Anmeldemöglichkeit.";
-"splash.onboarding.footer" = "Ohne Web-Konto und Freischaltung kann die App keine Aufträge korrekt zuordnen.";
+"splash.onboarding.title" = "Für die Übertragung freischalten";
+"splash.onboarding.step1" = "Du kannst ohne Anmeldung fotografieren; alle Aufnahmen bleiben zunächst sicher auf dem iPhone.";
+"splash.onboarding.step2" = "Registriere dich vor dem Upload auf PIXCAPTURE.APP und bestätige deine Mobilnummer mit dem ersten SMS-Code.";
+"splash.onboarding.step3" = "Nach der persönlichen Freigabe erhältst du eine zweite SMS und kannst dich hier für den Upload anmelden.";
+"splash.onboarding.footer" = "Ohne Freigabe bleibt nur die Übertragung gesperrt. Deine lokalen Aufnahmen bleiben erhalten.";
+"splash.onboarding.registerButton" = "AUF PIXCAPTURE.APP REGISTRIEREN";
 "splash.qr.title" = "ALTERNATIV MIT ANMELDE-QR";
 "splash.qr.subtitle" = "Statt E-Mail und Passwort";
 "splash.qr.invalid" = "Das ist kein gültiger Anmelde-QR.";
 "splash.qr.uploadConnectScanned" = "Das ist ein QR-Code für eine einzelne Übertragung. Bitte scanne ihn später unter „Aufnahmen übertragen“. Zur Anmeldung brauchst du E-Mail und Passwort oder einen separaten Anmelde-QR.";
+
+"onboarding.activation.title" = "Sofort fotografieren, später übertragen";
+"onboarding.activation.intro" = "Du kannst PIXCAPTURE ohne Anmeldung zum Fotografieren verwenden. Erst wenn du Aufnahmen auf den Server übertragen möchtest, brauchst du einen freigeschalteten Zugang.";
+"onboarding.activation.step1.title" = "Ohne Anmeldung fotografieren";
+"onboarding.activation.step1.body" = "Starte direkt mit der Kamera. Deine Aufnahmen und Metadaten werden lokal auf dem iPhone gespeichert.";
+"onboarding.activation.step2.title" = "Vor dem Upload registrieren";
+"onboarding.activation.step2.body" = "Lege auf PIXCAPTURE.APP dein Konto mit Mobilnummer, E-Mail-Adresse und einem eigenen Passwort an.";
+"onboarding.activation.step3.title" = "Mobilnummer per SMS bestätigen";
+"onboarding.activation.step3.body" = "Du erhältst einen sechsstelligen SMS-Code. Gib ihn auf der Webseite ein, damit deine Freigabeanfrage übermittelt wird.";
+"onboarding.activation.step4.title" = "Persönliche Freigabe abwarten";
+"onboarding.activation.step4.body" = "Nach der Prüfung erhältst du eine zweite SMS. Damit weißt du, dass dein App- und Web-Zugang freigeschaltet ist.";
+"onboarding.activation.step5.title" = "Zum Hochladen anmelden";
+"onboarding.activation.step5.body" = "Melde dich in der App mit deiner E-Mail-Adresse und dem Passwort von PIXCAPTURE.APP an. Danach kannst du die lokalen Aufnahmen übertragen.";
+"onboarding.activation.registerButton" = "JETZT AUF PIXCAPTURE.APP REGISTRIEREN";
+"onboarding.activation.loginButton" = "BEREITS FREIGESCHALTET? ANMELDEN";
+"onboarding.activation.offlineButton" = "JETZT OHNE ANMELDUNG FOTOGRAFIEREN";
 
 "jobs.sheet.note" = "Mit dem Stift bearbeitest du Jobs. Mit dem Papierkorb löschst du Test-Jobs dauerhaft.";
 "jobs.delete.title" = "Job löschen";

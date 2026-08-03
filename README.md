@@ -1,40 +1,43 @@
-# PixCapture Mobile
+# PIXCAPTURE iOS — aktueller Quellstand
 
-Dieses Repo ist die native PixCapture iOS-App: Aufnahme, lokale Sicherheit,
-QR/Web-Connect, Upload-Queue, Paket-/Kabel-Export, TestFlight und Apple-
-Compliance.
+Dieses öffentliche Repository enthält auf `main` den vollständigen aktuellen
+Stand der nativen PIXCAPTURE-iPhone-App vom 3. August 2026. Es ist eine
+isolierte Prüfkopie und technisch nicht mit dem privaten Produktions-Repository
+verbunden.
 
-## Aktueller Einstieg
+## Enthaltener Stand
 
-Vor Projektarbeit nicht aus alten Mobile-Handovers rekonstruieren. Der aktuelle
-verbindliche Einstieg ist:
+- Kamera, lokale Aufnahmesicherheit, Galerie und Grundrissfunktionen
+- lokales Fotografieren ohne Anmeldung; Freischaltung erst vor Servertransfer
+- Aktivierung mit zwei SMS-Stufen und anschließendem Upload-Login
+- korrigierte Portrait-/Landscape-Unterstützung und Nivellierungsachsen
+- WebRTC-Timeout, Fehlerweitergabe und sichere Wiederholbarkeit bei Abbruch
+- barrierearme Textfarben auf schwarzem Hintergrund
+- Release-Prüfliste und Regressionstests
 
-1. [../../00_READ_FIRST_EVERY_SESSION.md](/Volumes/drive%201/PIXCAPTURE/00_READ_FIRST_EVERY_SESSION.md)
-2. [../../docs/START.md](/Volumes/drive%201/PIXCAPTURE/docs/START.md)
-3. [../../docs/HANDOVERS/README.md](/Volumes/drive%201/PIXCAPTURE/docs/HANDOVERS/README.md)
-4. [../../docs/HANDOVERS/PIXCAPTURE_CURRENT_CONTRACT.md](/Volumes/drive%201/PIXCAPTURE/docs/HANDOVERS/PIXCAPTURE_CURRENT_CONTRACT.md)
+## Verifikation
 
-Der Current Contract gewinnt gegen aeltere Dateien in `docs-mobile/`.
+- Simulatorbuild erfolgreich
+- signierter Build für ein verbundenes iPhone erfolgreich
+- 66 Unit-/Integrationstests erfolgreich
+- Erststart-UI-Test einschließlich Scrollbarkeit und unterer Safe Area
+  erfolgreich
 
-## Inhalt
+Noch offen sind die dokumentierten realen iPhone-Tests für beide
+Querformatrichtungen sowie vollständige WebRTC-/Cloud-End-to-End-Läufe unter
+unterschiedlichen Netzbedingungen. Der genaue Prüfstand steht in
+[`docs-mobile/RELEASE_3_9_VERIFICATION_20260803.md`](docs-mobile/RELEASE_3_9_VERIFICATION_20260803.md).
 
-- [ios](/Volumes/drive%201/PIXCAPTURE/projects/pixcapture-mobile/ios)
-  Die eigentliche iPhone-App
-- [backend](/Volumes/drive%201/PIXCAPTURE/projects/pixcapture-mobile/backend)
-  Mobile Upload- und Session-Backend
-- [docs-mobile](/Volumes/drive%201/PIXCAPTURE/projects/pixcapture-mobile/docs-mobile)
-  Historische und thematische Mobile-Notizen. Nicht als Single Source of Truth
-  verwenden.
+## Prüfbereich
 
-## Status
+Für eine externe Codeprüfung sind insbesondere relevant:
 
-Aktiver iOS-Branch laut aktuellem Contract:
-`codex/20260417-mobile-branding-handover`.
+- `ios/PIXCAPTURE`
+- `ios/PIXCAPTURE.xcodeproj`
+- `ios/PIXCAPTURETests`
+- `ios/PIXCAPTUREUITests`
+- `scripts`
 
-Aktueller Apple-/Release-Kontext, Upload-Pfade, Naming-Regeln und offene
-Pruefpunkte stehen im Current Contract im Root-Handover.
-
-Bewusst lokal und nicht fuer Git gedacht:
-- `backend/node_modules/`
-- lokale `.env`-Dateien
-- Xcode-Nutzerzustand wie `xcuserdata`
+Das inaktive, rund 327 MB große OpenCV-Drittanbieterpaket, historische
+Dokumentarchive, persönliche Xcode-Daten und eine nicht verwendete alte
+Backendkopie sind bewusst nicht Bestandteil dieses Prüf-Repositories.

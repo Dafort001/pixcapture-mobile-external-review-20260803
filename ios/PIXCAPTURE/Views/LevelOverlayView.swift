@@ -114,8 +114,7 @@ struct KeystoneAlignmentGuide: View {
   var body: some View {
     let transform = KeystoneOrientationMapper.transform(
       rollRadians: roll,
-      pitchRadians: pitch,
-      viewportOrientation: viewportOrientation
+      pitchRadians: pitch
     )
     let guideColor = color(for: transform.status)
 
@@ -224,53 +223,30 @@ struct KeystoneGuideTransform: Equatable {
 enum KeystoneOrientationMapper {
   static func transform(
     rollRadians: Double,
-    pitchRadians: Double,
-    viewportOrientation: KeystoneViewportOrientation
+    pitchRadians: Double
   ) -> KeystoneGuideTransform {
     let rollDegrees = normalizeAngle(rollRadians) * 180 / .pi
     let pitchDegrees = normalizeAngle(pitchRadians) * 180 / .pi
-    let mapped = mapToViewport(
-      rollDegrees: rollDegrees,
-      pitchDegrees: pitchDegrees,
-      orientation: viewportOrientation
-    )
     let status = SingleShotCorrectionPolicy.assess(
-      rollDegrees: mapped.roll,
-      pitchDegrees: mapped.pitch
+      rollDegrees: rollDegrees,
+      pitchDegrees: pitchDegrees
     )
 
     return KeystoneGuideTransform(
-      normalizedRollForViewport: mapped.roll,
-      normalizedPitchForViewport: mapped.pitch,
+      normalizedRollForViewport: rollDegrees,
+      normalizedPitchForViewport: pitchDegrees,
       rollFactor: visualFactor(
-        mapped.roll,
+        rollDegrees,
         goodLimit: SingleShotCorrectionPolicy.rollGoodDegrees,
         usableLimit: SingleShotCorrectionPolicy.rollUsableDegrees
       ),
       pitchFactor: visualFactor(
-        mapped.pitch,
+        pitchDegrees,
         goodLimit: SingleShotCorrectionPolicy.pitchGoodDegrees,
         usableLimit: SingleShotCorrectionPolicy.pitchUsableDegrees
       ),
       status: status
     )
-  }
-
-  private static func mapToViewport(
-    rollDegrees: Double,
-    pitchDegrees: Double,
-    orientation: KeystoneViewportOrientation
-  ) -> (roll: Double, pitch: Double) {
-    switch orientation {
-    case .portrait:
-      return (rollDegrees, pitchDegrees)
-    case .portraitUpsideDown:
-      return (-rollDegrees, -pitchDegrees)
-    case .landscapeLeft:
-      return (pitchDegrees, -rollDegrees)
-    case .landscapeRight:
-      return (-pitchDegrees, rollDegrees)
-    }
   }
 
   private static func normalizeAngle(_ angle: Double) -> Double {

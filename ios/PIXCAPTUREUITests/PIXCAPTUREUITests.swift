@@ -41,6 +41,57 @@ final class PIXCAPTUREUITests: XCTestCase {
     }
 
     @MainActor
+    func testOfflineCaptureEntryDoesNotRequireLogin() throws {
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "--pixcapture-clear-auth",
+            "-pixcapture.hasSeenFirstRunOnboarding", "false",
+        ]
+        app.launchEnvironment["PIXCAPTURE_CLEAR_AUTH"] = "1"
+
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        app.launch()
+
+        let offlineButton = app.buttons["JETZT OHNE ANMELDUNG FOTOGRAFIEREN"]
+        XCTAssertTrue(
+            offlineButton.waitForExistence(timeout: 10),
+            "Offline capture entry did not appear on first launch."
+        )
+        XCTAssertFalse(
+            springboard.alerts.firstMatch.waitForExistence(timeout: 1),
+            "Camera permission must not be requested before the user chooses a capture feature."
+        )
+
+        let loginButton = app.buttons["BEREITS FREIGESCHALTET? ANMELDEN"]
+        var remainingScrollAttempts = 8
+        while !loginButton.isHittable && remainingScrollAttempts > 0 {
+            app.swipeUp()
+            remainingScrollAttempts -= 1
+        }
+
+        XCTAssertTrue(
+            loginButton.isHittable,
+            "The onboarding page could not be scrolled to its final action."
+        )
+        XCTAssertLessThanOrEqual(
+            loginButton.frame.maxY,
+            app.frame.maxY - 20,
+            "The final onboarding action overlaps the bottom safe area."
+        )
+        XCTAssertTrue(
+            offlineButton.isHittable,
+            "The primary offline action is not reachable after scrolling to the bottom."
+        )
+
+        offlineButton.tap()
+
+        XCTAssertTrue(
+            app.buttons["bottom.camera"].waitForExistence(timeout: 8),
+            "The local start screen did not open without authentication."
+        )
+    }
+
+    @MainActor
     func testLaunchPerformance() throws {
         // This measures how long it takes to launch your application.
         measure(metrics: [XCTApplicationLaunchMetric()]) {

@@ -13,6 +13,11 @@ ios/**/*.xcuserstate
 ios/**/*.xcuserdata/
 ios/**/xcuserdata/
 
+# Optional third-party Panorama/ArUco artifact. The App Store MVP does not use
+# this feature; restore the framework from the external artifact vault only for
+# a deliberate Panorama build.
+ios/PIXCAPTURE/Vendor/opencv2.xcframework/
+
 # Optional local build output
 ios/DerivedData/
 build/

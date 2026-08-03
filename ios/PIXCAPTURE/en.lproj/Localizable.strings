@@ -152,6 +152,8 @@
 "start.menu.language.title" = "Language";
 "start.menu.account.title" = "Sign out / switch user";
 "start.menu.account.subtitle" = "Clear the session and sign in again.";
+"start.menu.login.title" = "Sign in for upload";
+"start.menu.login.subtitle" = "Capture works offline. You need approved access only when transferring files.";
 "start.menu.help.title" = "Help";
 "start.menu.help.subtitle" = "Open first steps and usage notes.";
 "start.jobs.sheet.title" = "Manage Jobs";
@@ -167,7 +169,7 @@
 "root.jobs.sheet.clear" = "Continue without job";
 "help.backToLogin" = "Back to login";
 
-"splash.login.info" = "Sign in with the email and password you created when registering on PIXCAPTURE.APP.";
+"splash.login.info" = "To upload, sign in after approval with your email address and the password you chose.";
 "splash.login.emailPlaceholder" = "EMAIL";
 "splash.login.passwordPlaceholder" = "PASSWORD";
 "splash.login.passwordButton" = "SIGN IN WITH PASSWORD";
@@ -175,15 +177,32 @@
 "splash.backToStart" = "Back to start";
 "splash.help.button" = "HELP & FIRST STEPS";
 "splash.onboarding.badge" = "RECOMMENDED";
-"splash.onboarding.title" = "Register on PIXCAPTURE.APP first";
-"splash.onboarding.step1" = "Create your account on PIXCAPTURE.APP and wait until it is enabled.";
-"splash.onboarding.step2" = "Sign in here with the same email and password.";
-"splash.onboarding.step3" = "Sign in with email and password. The sign-in QR is only an alternative sign-in method.";
-"splash.onboarding.footer" = "Without a web account and activation, the app cannot assign jobs correctly.";
+"splash.onboarding.title" = "Enable access for transfer";
+"splash.onboarding.step1" = "You can capture without signing in; all photos remain safely stored on your iPhone.";
+"splash.onboarding.step2" = "Before uploading, register on PIXCAPTURE.APP and confirm your mobile number with the first SMS code.";
+"splash.onboarding.step3" = "After personal approval, you receive a second SMS and can sign in here for upload.";
+"splash.onboarding.footer" = "Without approval, only transfer remains locked. Your local captures stay available.";
+"splash.onboarding.registerButton" = "REGISTER ON PIXCAPTURE.APP";
 "splash.qr.title" = "ALTERNATIVELY USE A SIGN-IN QR";
 "splash.qr.subtitle" = "Instead of email and password";
 "splash.qr.invalid" = "This is not a valid sign-in QR.";
 "splash.qr.uploadConnectScanned" = "This QR code is for one transfer only. Scan it later under “Transfer photos”. To sign in, use email and password or a separate sign-in QR.";
+
+"onboarding.activation.title" = "Capture now, transfer later";
+"onboarding.activation.intro" = "You can use PIXCAPTURE for capturing without signing in. You need approved access only when you want to transfer files to the server.";
+"onboarding.activation.step1.title" = "Capture without signing in";
+"onboarding.activation.step1.body" = "Open the camera right away. Your captures and metadata are stored locally on your iPhone.";
+"onboarding.activation.step2.title" = "Register before uploading";
+"onboarding.activation.step2.body" = "Create your PIXCAPTURE.APP account with your mobile number, email address and a password you choose.";
+"onboarding.activation.step3.title" = "Confirm your mobile number by SMS";
+"onboarding.activation.step3.body" = "You receive a six-digit SMS code. Enter it on the website to submit your approval request.";
+"onboarding.activation.step4.title" = "Wait for personal approval";
+"onboarding.activation.step4.body" = "After review, you receive a second SMS confirming that your app and web access are enabled.";
+"onboarding.activation.step5.title" = "Sign in to upload";
+"onboarding.activation.step5.body" = "Sign in to the app with your email address and PIXCAPTURE.APP password. You can then transfer your local captures.";
+"onboarding.activation.registerButton" = "REGISTER ON PIXCAPTURE.APP NOW";
+"onboarding.activation.loginButton" = "ALREADY APPROVED? SIGN IN";
+"onboarding.activation.offlineButton" = "CAPTURE NOW WITHOUT SIGNING IN";
 
 "jobs.sheet.note" = "Use the pencil to edit jobs. Use the trash button to permanently delete test jobs.";
 "jobs.delete.title" = "Delete job";

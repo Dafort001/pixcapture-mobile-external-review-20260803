@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct OnboardingView: View {
+  @EnvironmentObject private var settings: AppSettings
+
   var onDone: () -> Void
   var onLogin: () -> Void
 
@@ -12,7 +14,11 @@ struct OnboardingView: View {
     static let pink = Color(red: 227.0 / 255.0, green: 163.0 / 255.0, blue: 174.0 / 255.0)
     static let panel = Color.white.opacity(0.07)
     static let border = Color.white.opacity(0.13)
+    static let text = AppTheme.textOnDark
+    static let strongText = AppTheme.textOnDarkStrong
   }
+
+  private static let registrationURL = URL(string: "https://pixcapture.app/auth/signin?mode=register")!
 
   var body: some View {
     GeometryReader { geometry in
@@ -32,51 +38,53 @@ struct OnboardingView: View {
               .frame(maxWidth: .infinity, alignment: .center)
               .padding(.bottom, 6)
 
-            Text("PixCapture zuerst im Web einrichten")
+            Text(l10n("onboarding.activation.title"))
               .font(.pixInter(size: 23, weight: .semibold))
-              .foregroundStyle(Color.white.opacity(0.94))
+              .foregroundStyle(Palette.strongText)
 
-            Text("Diese App funktioniert zusammen mit PIXCAPTURE.APP. Registriere dich zuerst auf der Webseite, warte auf die Freischaltung und melde dich danach hier mit derselben E-Mail und deinem selbst vergebenen Passwort an.")
+            Text(l10n("onboarding.activation.intro"))
               .font(.pixInter(size: 14, weight: .regular))
-              .foregroundStyle(Color.white.opacity(0.72))
+              .foregroundStyle(Palette.text.opacity(0.88))
               .fixedSize(horizontal: false, vertical: true)
 
             VStack(spacing: 10) {
               onboardingRow(
                 number: "1",
-                title: "Auf der Webseite registrieren",
-                body: "Gehe zuerst auf PIXCAPTURE.APP und erstelle dort dein Benutzerkonto. E-Mail und Passwort legst du in der Web-Anwendung selbst fest.",
+                title: l10n("onboarding.activation.step1.title"),
+                body: l10n("onboarding.activation.step1.body"),
                 color: Palette.blue
               )
               onboardingRow(
                 number: "2",
-                title: "Freischaltung abwarten",
-                body: "Dein Web-Konto muss fuer PixCapture freigeschaltet sein. Erst danach kann die App deine Auftraege und Uploads korrekt zuordnen.",
+                title: l10n("onboarding.activation.step2.title"),
+                body: l10n("onboarding.activation.step2.body"),
                 color: Palette.orange
               )
               onboardingRow(
                 number: "3",
-                title: "Auf dem iPhone anmelden",
-                body: "Melde dich in dieser App mit derselben E-Mail und demselben Passwort an, das du auf PIXCAPTURE.APP erstellt hast.",
+                title: l10n("onboarding.activation.step3.title"),
+                body: l10n("onboarding.activation.step3.body"),
                 color: Palette.pink
               )
               onboardingRow(
                 number: "4",
-                title: "Upload am Rechner verbinden",
-                body: "Wenn du Aufnahmen übertragen möchtest, öffnest du den gewünschten Upload-Weg in der Web-App und scannst dessen QR-Code. Dieser QR-Code verbindet nur diese eine Übertragung.",
+                title: l10n("onboarding.activation.step4.title"),
+                body: l10n("onboarding.activation.step4.body"),
                 color: Palette.blue
               )
               onboardingRow(
                 number: "5",
-                title: "Dann aufnehmen",
-                body: "Danach fotografierst oder erstellst du Grundrisse. Die Daten koennen dann dem richtigen Kundenauftrag zugeordnet und hochgeladen werden.",
+                title: l10n("onboarding.activation.step5.title"),
+                body: l10n("onboarding.activation.step5.body"),
                 color: Palette.orange
               )
             }
 
             VStack(spacing: 10) {
-              Link(destination: URL(string: "https://pixcapture.app")!) {
-                Text("PIXCAPTURE.APP öffnen")
+              Button {
+                onDone()
+              } label: {
+                Text(l10n("onboarding.activation.offlineButton"))
                   .font(.pixInter(size: 16, weight: .semibold))
                   .foregroundStyle(Color.black.opacity(0.82))
                   .frame(maxWidth: .infinity, minHeight: 50)
@@ -85,10 +93,8 @@ struct OnboardingView: View {
               }
               .buttonStyle(.plain)
 
-              Button {
-                onLogin()
-              } label: {
-                Text("Mit Web-Konto anmelden")
+              Link(destination: Self.registrationURL) {
+                Text(l10n("onboarding.activation.registerButton"))
                   .font(.pixInter(size: 16, weight: .semibold))
                   .foregroundStyle(Palette.blue)
                   .frame(maxWidth: .infinity, minHeight: 46)
@@ -98,11 +104,11 @@ struct OnboardingView: View {
               .buttonStyle(.plain)
 
               Button {
-                onDone()
+                onLogin()
               } label: {
-                Text("Einrichtung verstanden")
+                Text(l10n("onboarding.activation.loginButton"))
                   .font(.pixInter(size: 14, weight: .semibold))
-                  .foregroundStyle(Color.white.opacity(0.62))
+                  .foregroundStyle(Palette.text.opacity(0.76))
                   .frame(maxWidth: .infinity, minHeight: 44)
               }
               .buttonStyle(.plain)
@@ -131,10 +137,10 @@ struct OnboardingView: View {
       VStack(alignment: .leading, spacing: 4) {
         Text(title)
           .font(.pixInter(size: 14, weight: .semibold))
-          .foregroundStyle(Color.white.opacity(0.92))
+          .foregroundStyle(Palette.strongText.opacity(0.96))
         Text(body)
           .font(.pixInter(size: 12, weight: .regular))
-          .foregroundStyle(Color.white.opacity(0.66))
+          .foregroundStyle(Palette.text.opacity(0.82))
           .fixedSize(horizontal: false, vertical: true)
       }
     }
@@ -146,5 +152,9 @@ struct OnboardingView: View {
       RoundedRectangle(cornerRadius: 8, style: .continuous)
         .stroke(Palette.border, lineWidth: 1)
     )
+  }
+
+  private func l10n(_ key: String) -> String {
+    settings.localized(key)
   }
 }

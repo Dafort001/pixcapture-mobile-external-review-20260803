@@ -7,8 +7,8 @@ final class BrowserCompanionWebRTCBridge: NSObject {
   private var peerConnection: RTCPeerConnection?
   private var dataChannel: RTCDataChannel?
   private var candidatePollingTask: Task<Void, Never>?
-  private var readyContinuation: CheckedContinuation<Void, Error>?
   private var pendingBrowserCandidateCount = 0
+  private var browserFailureMessage: String?
   private var endpoint: URL?
   private var webSessionId: String?
 
@@ -45,8 +45,12 @@ final class BrowserCompanionWebRTCBridge: NSObject {
     self.endpoint = endpoint
     self.webSessionId = webSessionId
     pendingBrowserCandidateCount = 0
+    browserFailureMessage = nil
     candidatePollingTask?.cancel()
     candidatePollingTask = nil
+    defer {
+      closeConnection()
+    }
 
     try await connect(endpoint: endpoint, webSessionId: webSessionId)
     UploadDebugLog.write("[PIXUPLOAD] native webrtc data channel ready")
@@ -131,28 +135,52 @@ final class BrowserCompanionWebRTCBridge: NSObject {
   }
 
   private func waitUntilReady(timeoutSeconds: TimeInterval) async throws {
-    try await withThrowingTaskGroup(of: Void.self) { group in
-      group.addTask { @MainActor in
-        if self.dataChannel?.readyState == .open {
-          return
-        }
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-          self.readyContinuation = continuation
-        }
+    let deadline = Date().addingTimeInterval(timeoutSeconds)
+    while Date() < deadline {
+      try Task.checkCancellation()
+      if let browserFailureMessage {
+        throw PixcaptureUploadError.api(browserFailureMessage)
       }
-      group.addTask {
-        try await Task.sleep(nanoseconds: UInt64(timeoutSeconds * 1_000_000_000))
-        throw PixcaptureUploadError.api("Browser-Companion hat den nativen Datenkanal nicht rechtzeitig geoeffnet.")
+      if dataChannel?.readyState == .open {
+        return
       }
-      try await group.next()
-      group.cancelAll()
+      switch peerConnection?.iceConnectionState {
+      case .failed:
+        throw PixcaptureUploadError.api(
+          "WebRTC-Verbindung fehlgeschlagen. Es konnte kein direkter oder Relay-Netzwerkpfad hergestellt werden."
+        )
+      case .closed:
+        throw PixcaptureUploadError.api("WebRTC-Verbindung wurde vor dem Upload geschlossen.")
+      default:
+        break
+      }
+      try await Task.sleep(nanoseconds: 100_000_000)
     }
+    throw PixcaptureUploadError.api(
+      "WebRTC-Verbindung konnte nicht hergestellt werden. Der Upload wurde beendet und kann erneut gestartet werden."
+    )
+  }
+
+  private func closeConnection() {
+    candidatePollingTask?.cancel()
+    candidatePollingTask = nil
+    dataChannel?.close()
+    dataChannel = nil
+    peerConnection?.close()
+    peerConnection = nil
+    endpoint = nil
+    webSessionId = nil
+    pendingBrowserCandidateCount = 0
+    browserFailureMessage = nil
   }
 
   private func pollForBrowserOffer(endpoint: URL, webSessionId: String) async throws -> BrowserCompanionSignal {
     let deadline = Date().addingTimeInterval(35)
     while Date() < deadline {
       let signal = try await fetchSignal(endpoint: endpoint, webSessionId: webSessionId)
+      if let failureMessage = signal.browserFailureMessage {
+        throw PixcaptureUploadError.api(failureMessage)
+      }
       if signal.browserOffer != nil {
         return signal
       }
@@ -193,6 +221,11 @@ final class BrowserCompanionWebRTCBridge: NSObject {
             peer.iceConnectionState != .closed {
         do {
           let signal = try await self.fetchSignal(endpoint: endpoint, webSessionId: webSessionId)
+          if let failureMessage = signal.browserFailureMessage {
+            self.browserFailureMessage = failureMessage
+            UploadDebugLog.write("[PIXUPLOAD] native webrtc browser failure=\(failureMessage)")
+            return
+          }
           try await self.applyBrowserCandidates(signal.browserCandidates, on: peer)
         } catch {
           UploadDebugLog.write("[PIXUPLOAD] native webrtc candidate poll error=\(error.localizedDescription)")
@@ -282,6 +315,9 @@ final class BrowserCompanionWebRTCBridge: NSObject {
   private func waitForBufferedAmountBelow(_ threshold: UInt64) async throws {
     while let channel = dataChannel, channel.bufferedAmount > threshold {
       try Task.checkCancellation()
+      if let browserFailureMessage {
+        throw PixcaptureUploadError.api(browserFailureMessage)
+      }
       try await Task.sleep(nanoseconds: 10_000_000)
     }
   }
@@ -337,10 +373,6 @@ extension BrowserCompanionWebRTCBridge: RTCPeerConnectionDelegate {
       self.dataChannel = dataChannel
       dataChannel.delegate = self
       UploadDebugLog.write("[PIXUPLOAD] native webrtc didOpen dataChannel state=\(dataChannel.readyState.rawValue)")
-      if dataChannel.readyState == .open {
-        self.readyContinuation?.resume()
-        self.readyContinuation = nil
-      }
     }
   }
   nonisolated func peerConnection(_ peerConnection: RTCPeerConnection, didChange newState: RTCIceConnectionState) {
@@ -368,10 +400,6 @@ extension BrowserCompanionWebRTCBridge: RTCDataChannelDelegate {
   nonisolated func dataChannelDidChangeState(_ dataChannel: RTCDataChannel) {
     Task { @MainActor in
       UploadDebugLog.write("[PIXUPLOAD] native webrtc dataChannel state=\(dataChannel.readyState.rawValue)")
-      if dataChannel.readyState == .open {
-        self.readyContinuation?.resume()
-        self.readyContinuation = nil
-      }
     }
   }
 
@@ -385,6 +413,18 @@ private struct BrowserCompanionSignalResponse: Decodable {
 private struct BrowserCompanionSignal: Decodable {
   let browserOffer: BrowserCompanionSessionDescription?
   let browserCandidates: [BrowserCompanionIceCandidate]
+  let transfer: BrowserCompanionTransfer?
+
+  var browserFailureMessage: String? {
+    guard transfer?.status == "failed" else { return nil }
+    let detail = transfer?.error?.trimmingCharacters(in: .whitespacesAndNewlines)
+    return detail?.isEmpty == false ? detail : "Browser-Companion hat die WebRTC-Verbindung beendet."
+  }
+}
+
+private struct BrowserCompanionTransfer: Decodable {
+  let status: String?
+  let error: String?
 }
 
 private struct BrowserCompanionSessionDescription: Decodable {

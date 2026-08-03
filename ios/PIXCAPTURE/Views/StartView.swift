@@ -277,14 +277,25 @@ struct StartView: View {
           onNavigate(.onboarding)
         }
 
-        startMenuRow(
-          icon: "person.crop.circle",
-          title: l10n("start.menu.account.title"),
-          subtitle: l10n("start.menu.account.subtitle")
-        ) {
-          isStartMenuPresented = false
-          DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            showAccountSwitchConfirmation = true
+        if authService.isAuthenticated {
+          startMenuRow(
+            icon: "person.crop.circle",
+            title: l10n("start.menu.account.title"),
+            subtitle: l10n("start.menu.account.subtitle")
+          ) {
+            isStartMenuPresented = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+              showAccountSwitchConfirmation = true
+            }
+          }
+        } else {
+          startMenuRow(
+            icon: "person.crop.circle.badge.plus",
+            title: l10n("start.menu.login.title"),
+            subtitle: l10n("start.menu.login.subtitle")
+          ) {
+            isStartMenuPresented = false
+            onOpenLogin()
           }
         }
 
