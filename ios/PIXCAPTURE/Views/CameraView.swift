@@ -419,8 +419,7 @@ struct CameraView: View {
     guard settings.photoCaptureMode == .singleShot else { return nil }
     let transform = KeystoneOrientationMapper.transform(
       rollRadians: camera.levelAngle,
-      pitchRadians: camera.levelPitch,
-      viewportOrientation: KeystoneViewportOrientation.current()
+      pitchRadians: camera.levelPitch
     )
     return SingleShotCaptureAssessment(
       triggeredAt: triggeredAt,

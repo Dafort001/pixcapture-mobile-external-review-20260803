@@ -187,7 +187,18 @@ final class LevelMonitor {
   }
 
   private static func currentInterfaceOrientation() -> UIInterfaceOrientation {
-    // Prefer physical device orientation to avoid wrong mapping when UI orientation is locked.
+    // Level values are expressed in the currently rendered viewport's axes.
+    // Once landscape is supported, the scene orientation is the authoritative
+    // coordinate system and avoids stale UIDevice values during rotation.
+    if let scene = preferredForegroundWindowScene() {
+      let orientation = scene.effectiveGeometry.interfaceOrientation
+      if orientation != .unknown {
+        return orientation
+      }
+    }
+
+    // Physical orientation is only a fallback while no foreground scene is
+    // available yet.
     switch UIDevice.current.orientation {
     case .portrait:
       return .portrait
@@ -201,24 +212,10 @@ final class LevelMonitor {
       break
     }
 
-    if let scene = preferredForegroundWindowScene() {
-      return scene.effectiveGeometry.interfaceOrientation
-    }
-
-    // Fallback if scene isn't available yet.
-    switch UIDevice.current.orientation {
-    case .landscapeLeft:
-      return .landscapeLeft
-    case .landscapeRight:
-      return .landscapeRight
-    case .portraitUpsideDown:
-      return .portraitUpsideDown
-    default:
-      return .portrait
-    }
+    return .portrait
   }
 
-  private static func map(gravity: CMAcceleration, for orientation: UIInterfaceOrientation) -> (roll: Double, pitch: Double) {
+  static func map(gravity: CMAcceleration, for orientation: UIInterfaceOrientation) -> (roll: Double, pitch: Double) {
     let gx = gravity.x
     let gy = gravity.y
     let gz = gravity.z

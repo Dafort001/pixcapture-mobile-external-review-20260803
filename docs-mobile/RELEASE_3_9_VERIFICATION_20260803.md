@@ -12,8 +12,12 @@ Build ersetzt keinen realen Geräte- oder Übertragungstest.
 - [x] Debug-Simulatorbuild ohne ausgelagertes OpenCV-Framework erfolgreich.
 - [x] Erzeugtes App-Bundle enthält Portrait, Landscape Left und Landscape Right
   als unterstützte iPhone-Ausrichtungen.
-- [x] 61 Unit-/Integrationstests erfolgreich, einschließlich vorhandener
-  Galerie-Orientierungstests.
+- [x] App-Store-3.8-Fehler anhand Daniels Screenshots reproduziert: Portrait
+  `R 0,0° / P 1,2°`, Landscape in gleicher Lage `R -89,8° / P 0,7°`.
+- [x] 63 Unit-/Integrationstests erfolgreich, einschließlich fünf neuer
+  Level-/Querformat-Regressionstests und vorhandener Galerie-Orientierungstests.
+- [x] Signierter Debug-Build für Daniels verbundenes iPhone 15 Pro Max
+  erfolgreich; noch nicht installiert.
 - [ ] Vollständige UI-Suite: ein bestehender Galerie-Test benötigt Testdaten;
   drei echte Upload-E2E-Tests wurden ohne Zugangsdaten/QR-Payload übersprungen.
 
